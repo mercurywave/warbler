@@ -1,0 +1,30 @@
+{
+  "name": "warbler",
+  "version": "0.0.1",
+  "description": "Note taking tool",
+  "main": "index.js",
+  "scripts": {
+    "tsc": "tsc",
+    "build": "webpack",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "webpack serve --open",
+    "watch": "webpack --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mercurywave/warbler.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mercurywave/warbler/issues"
+  },
+  "homepage": "https://github.com/mercurywave/warbler#readme",
+  "devDependencies": {
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.9.2",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1"
+  }
+}
