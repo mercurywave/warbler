@@ -1,12 +1,13 @@
+import { DB } from "./DB";
 import { Flow, Route } from "./flow";
+import { Note } from "./note";
 
 document.addEventListener("DOMContentLoaded", () => {
     initUi();
     setup();
 });
 
-let __notes : string[] = [];
-
+let __mainPane: Note[] = [];
 
 function initUi() {
     let main = document.querySelector("body") as HTMLElement;
@@ -28,7 +29,9 @@ function mkNavigation(route: Route) {
         innerText: "Add Note",
     });
     btAddNote.addEventListener("click", () => {
-        __notes.push(`new note ${new Date()}`);
+        let note = DB.CreateNote();
+        note.text = `new note ${new Date()}`;
+        __mainPane = DB.AllNotes();
         Flow.Dirty();
     });
 }
@@ -40,13 +43,15 @@ function mkMain(route: Route) {
 
 function mkNoteList(route: Route){
     route.root("div", {id: "notesMain"});
-    route.bindArray(__notes, mkNoteControl);
+    route.bindArray(() =>__mainPane, mkNoteControl);
 }
 
-function mkNoteControl(route: Route, elem: string){
-    route.root("div", {innerText: elem});
+function mkNoteControl(route: Route, note: Note){
+    route.root("div", {innerText: note.text});
 }
 
-async function setup() {
-    console.log("Hello World");
+async function setup(): Promise<void> {
+    await DB.Init();
+    __mainPane = DB.AllNotes();
+    Flow.Dirty();
 }
