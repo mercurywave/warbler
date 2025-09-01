@@ -1,0 +1,203 @@
+
+let __allRoutes: Route[] = [];
+let __scheduled: boolean = false;
+
+export class Flow {
+
+    public static Init(builder: (route: Route) => void): HTMLElement {
+        __allRoutes = [];
+        let rt = new Route(0);
+        builder(rt);
+        if (!rt._root) throw 'no document root';
+        Flow.Reflow();
+        return rt._root;
+    }
+
+    public static Dirty() {
+        if (!__scheduled) {
+            __scheduled = true;
+            requestAnimationFrame(() => {
+                __scheduled = false;
+                Flow.Reflow();
+            });
+
+        }
+    }
+
+    private static Reflow() {
+        let index = 0;
+
+        let routes = [...__allRoutes];
+        let processed: Route[] = [];
+        let more: boolean = true;
+        while (more) {
+            index++;
+            routes.sort((a, b) => a._depth - b._depth);
+            let checksum = __allRoutes.length;
+            for (const route of routes) {
+                route._flow();
+                processed.push(route);
+            }
+            more = __allRoutes.length > checksum; // more nodes added
+            routes = __allRoutes.filter(r => !processed.includes(r));
+
+            if (index > 9999) {
+                console.error("Flow.Reflow is probably in an infinite loop!");
+                break;
+            }
+        }
+        setTimeout(() => {
+            __allRoutes = __allRoutes.filter(r => r._isConnected);
+        }, 0);
+    }
+
+    private constructor() { } // never instantiated
+}
+
+type ListOrBound = any[] | (() => any[]);
+
+export class Route {
+    public _depth: number;
+    public _boundValue: any;
+    public _root: HTMLElement | null = null;
+    private _actions: (() => void)[] = [];
+    private _arrays: BoundList[] = [];
+
+    constructor(depth: number, boundValue?: any) {
+        this._depth = depth;
+        this._boundValue = boundValue;
+        __allRoutes.push(this);
+    }
+
+    public bind(action: () => void) {
+        this._actions.push(action);
+    }
+
+    public root<T extends HTMLElement>(elemName: keyof HTMLElementTagNameMap, props?: Partial<T>): T {
+        if (this._root) throw 'root already set';
+        let root = document.createElement(elemName) as T;
+        this.applyProps(root, props);
+        this._root = root;
+        return root;
+    }
+
+    public child<T extends HTMLElement>(elemName: keyof HTMLElementTagNameMap, props?: Partial<T>): T {
+        if (!this._root) throw 'root not set';
+        let elem = document.createElement(elemName) as T;
+        this.applyProps(elem, props);
+        this._root.appendChild(elem);
+        return elem;
+    }
+
+    public descendant<T extends HTMLElement>(parent: HTMLElement, elemName: keyof HTMLElementTagNameMap, props?: Partial<T>): T {
+        let elem = document.createElement(elemName) as T;
+        this.applyProps(elem, props);
+        parent.appendChild(elem);
+        return elem;
+    }
+
+    private applyProps<T>(elem: HTMLElement, props?: Partial<T>) {
+        if (props) {
+            for (const [key, value] of Object.entries(props)) {
+                // @ts-ignore: TypeScript can't guarantee all keys exist on T
+                elem[key] = value;
+            }
+        }
+    }
+
+    public bindCtl(builder: (route: Route) => void, parent?: HTMLElement) {
+        if (!this._root) throw 'root not set';
+        let cRoute = new Route(this._depth + 1);
+        builder(cRoute);
+        if (!cRoute._root) throw 'builder did not set an element';
+        (parent ?? this._root).appendChild(cRoute._root);
+    }
+
+    public bindArray(list: ListOrBound, handler: (route: Route, elem: any) => void, host?: HTMLElement | null) {
+        if(!host) host = this._root;
+        if (!host) throw 'could not seat array';
+        let arr = new BoundList(this, host, list, handler);
+        this._arrays.push(arr);
+        arr.sync();
+    }
+
+    public get _isConnected(): boolean { return this._root?.isConnected ?? false };
+    public _flow() {
+        if (!this._isConnected) { return; }
+        for(const list of this._arrays){
+            list.sync();
+        }
+        for (const bind of this._actions) {
+            bind();
+        }
+    }
+}
+
+class BoundList {
+    private __list: ListOrBound;
+    private __bound: Route[] = [];
+    private __parent: Route;
+    private __container: HTMLElement
+    private __handler: (route: Route, elem: any) => void;
+
+    public constructor(parent: Route, container: HTMLElement, list: ListOrBound, handler: (route: Route, elem: any) => void) {
+        this.__parent = parent;
+        this.__container = container;
+        this.__list = list;
+        this.__handler = handler;
+    }
+    private getList(): object[] {
+        return (typeof this.__list === "function") ? this.__list() : this.__list;
+    }
+    public sync() {
+        if (this.isInSync()) return;
+        let bound = [...this.__bound];
+
+        let goal: Route[] = [];
+        let children: HTMLElement[] = [];
+        for (const o of this.getList()) {
+            let route = bound.find(r => r._boundValue === o);
+            if (route)
+                bound = bound.filter(r => r !== route);
+            else {
+                route = new Route(this.__parent._depth, o);
+                this.__handler(route, o);
+            }
+            if (route._root)
+                children.push(route._root);
+        }
+        replaceChildrenPreserving(this.__container, children);
+        this.__bound = goal;
+    }
+    private isInSync() {
+        let goal = this.getList();
+        if (goal.length != this.__bound.length) return false;
+        for (let index = 0; index < this.__bound.length; index++) {
+            const route = this.__bound[index];
+            if (route._boundValue != goal[index]) return false;
+        }
+        return true;
+    }
+}
+
+function replaceChildrenPreserving<T extends HTMLElement>(
+    parent: HTMLElement,
+    newChildren: T[]
+): void {
+    const existing = Array.from(parent.children) as T[];
+
+    // Remove any children not in the new list
+    for (const child of existing) {
+        if (!newChildren.includes(child)) {
+            parent.removeChild(child);
+        }
+    }
+
+    // Insert or reorder new children
+    newChildren.forEach((child, i) => {
+        const current = parent.children[i];
+        if (current !== child) {
+            parent.insertBefore(child, current ?? null);
+        }
+    });
+}
