@@ -2,29 +2,29 @@
 let __allRoutes: Route[] = [];
 let __scheduled: boolean = false;
 
-export class Flow {
+export namespace Flow {
 
-    public static Init(builder: (route: Route) => void): HTMLElement {
+    export function Init(builder: (route: Route) => void): HTMLElement {
         __allRoutes = [];
         let rt = new Route(0);
         builder(rt);
         if (!rt._root) throw 'no document root';
-        Flow.Reflow();
+        Reflow();
         return rt._root;
     }
 
-    public static Dirty() {
+    export function Dirty() {
         if (!__scheduled) {
             __scheduled = true;
             requestAnimationFrame(() => {
                 __scheduled = false;
-                Flow.Reflow();
+                Reflow();
             });
 
         }
     }
 
-    private static Reflow() {
+    function Reflow() {
         let index = 0;
 
         let routes = [...__allRoutes];
@@ -50,8 +50,6 @@ export class Flow {
             __allRoutes = __allRoutes.filter(r => r._isConnected);
         }, 0);
     }
-
-    private constructor() { } // never instantiated
 }
 
 type ListOrBound = any[] | (() => any[]);
