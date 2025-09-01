@@ -2,11 +2,13 @@
 let __allRoutes: Route[] = [];
 let __scheduled: boolean = false;
 
+type Nil = null | undefined;
+
 export namespace Flow {
 
-    export function Init(builder: (route: Route) => void): HTMLElement {
+    export function Init(root: HTMLElement, builder: (route: Route) => void): HTMLElement {
         __allRoutes = [];
-        let rt = new Route(0);
+        let rt = new Route(root, 0);
         builder(rt);
         if (!rt._root) throw 'no document root';
         Reflow();
@@ -57,11 +59,12 @@ type ListOrBound = any[] | (() => any[]);
 export class Route {
     public _depth: number;
     public _boundValue: any;
-    public _root: HTMLElement | null = null;
+    public _root: HTMLElement | Nil = null;
     private _actions: (() => void)[] = [];
     private _arrays: BoundList[] = [];
 
-    constructor(depth: number, boundValue?: any) {
+    constructor(root: HTMLElement | Nil, depth: number, boundValue?: any) {
+        this._root = root;
         this._depth = depth;
         this._boundValue = boundValue;
         __allRoutes.push(this);
@@ -74,7 +77,7 @@ export class Route {
     public root<T extends HTMLElement>(elemName: keyof HTMLElementTagNameMap, props?: Partial<T>): T {
         if (this._root) throw 'root already set';
         let root = document.createElement(elemName) as T;
-        this.applyProps(root, props);
+        this._applyProps(root, props);
         this._root = root;
         return root;
     }
@@ -82,19 +85,24 @@ export class Route {
     public child<T extends HTMLElement>(elemName: keyof HTMLElementTagNameMap, props?: Partial<T>): T {
         if (!this._root) throw 'root not set';
         let elem = document.createElement(elemName) as T;
-        this.applyProps(elem, props);
+        this._applyProps(elem, props);
         this._root.appendChild(elem);
         return elem;
     }
 
     public descendant<T extends HTMLElement>(parent: HTMLElement, elemName: keyof HTMLElementTagNameMap, props?: Partial<T>): T {
         let elem = document.createElement(elemName) as T;
-        this.applyProps(elem, props);
+        this._applyProps(elem, props);
         parent.appendChild(elem);
         return elem;
     }
 
-    private applyProps<T>(elem: HTMLElement, props?: Partial<T>) {
+    public applyProps<T>(props: Partial<T>){
+        if (!this._root) throw 'root not set';
+        this._applyProps(this._root, props);
+    }
+
+    private _applyProps<T>(elem: HTMLElement, props?: Partial<T>) {
         if (props) {
             for (const [key, value] of Object.entries(props)) {
                 // @ts-ignore: TypeScript can't guarantee all keys exist on T
@@ -105,10 +113,10 @@ export class Route {
 
     public bindCtl(builder: (route: Route) => void, parent?: HTMLElement) {
         if (!this._root) throw 'root not set';
-        let cRoute = new Route(this._depth + 1);
+        let cRoute = new Route(parent, this._depth + 1);
         builder(cRoute);
         if (!cRoute._root) throw 'builder did not set an element';
-        (parent ?? this._root).appendChild(cRoute._root);
+        if(!parent) this._root.appendChild(cRoute._root);
     }
 
     public bindArray(list: ListOrBound, handler: (route: Route, elem: any) => void, host?: HTMLElement | null) {
@@ -158,7 +166,7 @@ class BoundList {
             if (route)
                 bound = bound.filter(r => r !== route);
             else {
-                route = new Route(this.__parent._depth, o);
+                route = new Route(null, this.__parent._depth, o);
                 this.__handler(route, o);
             }
             if (route._root)

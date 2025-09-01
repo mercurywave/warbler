@@ -11,12 +11,11 @@ let __mainPane: Note[] = [];
 
 function initUi() {
     let main = document.querySelector("body") as HTMLElement;
-    let elem = Flow.Init(mkRoot);
-    main.replaceChildren(elem);
+    Flow.Init(main, mkRoot);
 }
 
 function mkRoot(route: Route) {
-    route.root("div", { id: "mainWrap" });
+    route.applyProps({ id: "mainWrap" });
     route.bindCtl(mkNavigation);
     let main = route.child("main");
     route.bindCtl(mkMain, main);
@@ -37,7 +36,7 @@ function mkNavigation(route: Route) {
 }
 
 function mkMain(route: Route) {
-    route.root("div", { id: "mainInner" });
+    route.applyProps({ id: "mainInner" });
     route.bindCtl(mkNoteList);
 }
 
