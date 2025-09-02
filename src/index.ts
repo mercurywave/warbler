@@ -40,13 +40,20 @@ function mkMain(route: Route) {
     route.bindCtl(mkNoteList);
 }
 
-function mkNoteList(route: Route){
-    route.root("div", {id: "notesMain"});
-    route.bindArray(() =>__mainPane, mkNoteControl);
+function mkNoteList(route: Route) {
+    route.root("div", { id: "notesMain" });
+    route.bindArray(() => __mainPane, mkNoteControl);
 }
 
-function mkNoteControl(route: Route, note: Note){
-    route.root("div", {innerText: note.text});
+function mkNoteControl(route: Route, note: Note) {
+    route.root("div");
+    let wrapper = route.child("div", { className: "bubbleWrap" });
+    let edit = route.elem<HTMLTextAreaElement>(wrapper, "textarea", { className: "bubble", rows: 1 });
+    route.bind(() => edit.value = note.text);
+    edit.addEventListener("change", () => {
+        note.text = edit.value;
+        Flow.Dirty();
+    });
 }
 
 async function setup(): Promise<void> {

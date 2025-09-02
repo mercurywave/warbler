@@ -90,14 +90,14 @@ export class Route {
         return elem;
     }
 
-    public descendant<T extends HTMLElement>(parent: HTMLElement, elemName: keyof HTMLElementTagNameMap, props?: Partial<T>): T {
+    public elem<T extends HTMLElement>(parent: HTMLElement, elemName: keyof HTMLElementTagNameMap, props?: Partial<T>): T {
         let elem = document.createElement(elemName) as T;
         this._applyProps(elem, props);
         parent.appendChild(elem);
         return elem;
     }
 
-    public applyProps<T>(props: Partial<T>){
+    public applyProps<T>(props: Partial<T>) {
         if (!this._root) throw 'root not set';
         this._applyProps(this._root, props);
     }
@@ -111,16 +111,31 @@ export class Route {
         }
     }
 
+    public conditional(host: HTMLElement, ifRender: () => boolean, builder: (route: Route) => void) {
+        let state = { rendered: false };
+        this.bind(() => {
+            if (ifRender()) {
+                if (!state.rendered) {
+                    this.bindCtl(builder, host);
+                    state.rendered = true;
+                }
+            } else {
+                state.rendered = false;
+                host.innerHTML = '';
+            }
+        });
+    }
+
     public bindCtl(builder: (route: Route) => void, parent?: HTMLElement) {
         if (!this._root) throw 'root not set';
         let cRoute = new Route(parent, this._depth + 1);
         builder(cRoute);
         if (!cRoute._root) throw 'builder did not set an element';
-        if(!parent) this._root.appendChild(cRoute._root);
+        if (!parent) this._root.appendChild(cRoute._root);
     }
 
     public bindArray(list: ListOrBound, handler: (route: Route, elem: any) => void, host?: HTMLElement | null) {
-        if(!host) host = this._root;
+        if (!host) host = this._root;
         if (!host) throw 'could not seat array';
         let arr = new BoundList(this, host, list, handler);
         this._arrays.push(arr);
@@ -130,7 +145,7 @@ export class Route {
     public get _isConnected(): boolean { return this._root?.isConnected ?? false };
     public _flow() {
         if (!this._isConnected) { return; }
-        for(const list of this._arrays){
+        for (const list of this._arrays) {
             list.sync();
         }
         for (const bind of this._actions) {
