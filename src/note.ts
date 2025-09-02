@@ -15,6 +15,7 @@ export class Note {
 
     public get text() { return this._meta.data.text; }
     public set text(value: string) {
+        if(this._meta.data.text === value) return;
         this._meta.data.text = value;
         this.FlagDirty();
     }
