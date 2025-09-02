@@ -1,9 +1,8 @@
+import { Nil } from "./util";
 
 let __tree: Route;
 let __allRoutes: Route[] = [];
 let __scheduled: boolean = false;
-
-type Nil = null | undefined;
 
 export namespace Flow {
 
@@ -202,8 +201,10 @@ class BoundList {
                 route = new Route(this.__parent, null, o);
                 this.__handler(route, o);
             }
-            if (route._root)
+            if (route._root){
                 children.push(route._root);
+                goal.push(route);
+            }
         }
         replaceChildrenPreserving(this.__container, children);
         this.__bound = goal;

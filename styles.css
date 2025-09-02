@@ -162,6 +162,22 @@ body {
     color: #fff  !important;
 }
 
+
+.btNavigate{
+    padding: 5px 5px;
+    margin: 3px 0;
+    background: none;
+    border: 0;
+    color: #FFF9E4;
+    display: block;
+    width: 95%;
+    text-align: left;
+}
+.btNavigate:hover{
+    outline: 1px solid #3C4A56;
+    border-radius: 6px;
+}
+
 .btAdd {
     background: none;
     border: none;

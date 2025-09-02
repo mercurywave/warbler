@@ -1,4 +1,7 @@
 
+
+export type Nil = null | undefined;
+
 export namespace util {
     
     export function ellipsize(text:string, maxLength: number) {

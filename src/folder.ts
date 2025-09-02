@@ -21,6 +21,7 @@ export class Folder {
         this.FlagDirty();
     }
 
+    public get id():string { return this._data.id; }
 }
 
 //what is saved to settings file and db

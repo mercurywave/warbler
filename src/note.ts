@@ -1,4 +1,6 @@
 import { DB } from "./DB";
+import { Folder } from "./folder";
+import { Nil } from "./util";
 
 // in-memory interface
 export class Note {
@@ -13,13 +15,24 @@ export class Note {
         DB.SaveNote(this);
     }
 
-    public get text() { return this._meta.data.text; }
+    public get text() { return this.data.text; }
     public set text(value: string) {
-        if(this._meta.data.text === value) return;
-        this._meta.data.text = value;
+        if(this.data.text === value) return;
+        this.data.text = value;
         this.FlagDirty();
     }
 
+    private get data():NoteData { return this._meta.data }
+
+    public get folderId():string | Nil { return this.data.folderId; }
+    public set folderId(value:string | Nil) {
+        this.data.folderId = value ?? undefined;
+        this.FlagDirty();
+    }
+    public get folder():Folder | Nil {
+        let id = this.folderId;
+        return DB.AllFolders().find(f => f.id === id);
+    }
 }
 
 // main interface, stored in indexdb

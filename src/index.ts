@@ -2,13 +2,12 @@ import { DB } from "./DB";
 import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
 import { Note } from "./note";
+import { View } from "./view";
 
 document.addEventListener("DOMContentLoaded", () => {
     initUi();
     setup();
 });
-
-let __mainPane: Note[] = [];
 
 function initUi() {
     let main = document.querySelector("body") as HTMLElement;
@@ -25,6 +24,22 @@ function mkRoot(route: Route) {
 function mkNavigation(route: Route) {
     route.root("div", { id: "navigation" });
     route.bindCtl(mkSearch);
+    let btAll = route.child<HTMLButtonElement>("button", {
+        type: "button",
+        innerText: "All",
+        className: "btNavigate",
+    });
+    btAll.addEventListener("click", () => {
+        View.ShowAll();
+    });
+    let btUnsorted = route.child<HTMLButtonElement>("button", {
+        type: "button",
+        innerText: "Unsorted",
+        className: "btNavigate",
+    });
+    btUnsorted.addEventListener("click", () => {
+        View.Unsorted();
+    });
     route.bindCtl(mkFolderList);
 }
 
@@ -73,7 +88,15 @@ function mkFolder(route: Route, folder: Folder){
         placeholder: "Unnamed Folder",
         autocomplete: "off",
     });
-    route.bind(() => input.value = folder.title);
+    route.bind(() =>{
+        input.value = folder.title;
+        input.readOnly = View.CurrFolder() !== folder;
+    });
+    input.addEventListener("click", () => {
+        if(View.CurrFolder() !== folder){
+            View.Folder(folder);
+        }
+    });
     input.addEventListener("change", () => {
         folder.title = input.value;
         Flow.Reflow(route);
@@ -91,14 +114,15 @@ function mkMain(route: Route) {
     btAddNote.addEventListener("click", () => {
         let note = DB.CreateNote();
         note.text = `new note ${new Date()}`;
-        __mainPane = DB.AllNotes();
+        if(View.CurrFolder()) note.folderId = View.CurrFolder()?.id;
+        View.ForceAdd(note);
         Flow.Dirty();
     });
 }
 
 function mkNoteList(route: Route) {
     route.root("div", { id: "notesMain" });
-    route.bindArray(() => __mainPane, mkNoteControl);
+    route.bindArray(() => View.CurrNotes(), mkNoteControl);
 }
 
 function mkNoteControl(route: Route, note: Note) {
@@ -114,6 +138,6 @@ function mkNoteControl(route: Route, note: Note) {
 
 async function setup(): Promise<void> {
     await DB.Init();
-    __mainPane = DB.AllNotes();
+    View.ShowAll();
     Flow.Dirty();
 }
