@@ -46,8 +46,8 @@ function mkNavigation(route: Route) {
 function mkSearch(route: Route) {
     let div = route.root("div", { id: "search" });
     let txtField = route.child<HTMLInputElement>("input", {
-        type: "text", 
-        id: "search-input", 
+        type: "text",
+        id: "search-input",
         placeholder: "Search ...", // the space currently tricks edge into NOT disrespecting autocomplete
         autocomplete: "off",
         ariaHidden: "true",
@@ -62,7 +62,7 @@ function mkSearch(route: Route) {
     });
 }
 
-function mkFolderList(route: Route){
+function mkFolderList(route: Route) {
     route.root("div", { id: "folders" });
     let header = route.child("div");
     route.elem(header, "span", { innerText: "Folders" });
@@ -81,30 +81,23 @@ function mkFolderList(route: Route){
     route.bindArray(() => DB.AllFolders(), mkFolder, list);
 }
 
-function mkFolder(route: Route, folder: Folder){
-    let input = route.root<HTMLInputElement>("input", {
+function mkFolder(route: Route, folder: Folder) {
+    let input = route.root<HTMLButtonElement>("button", {
         className: "folder",
-        type: "text",
-        placeholder: "Unnamed Folder",
-        autocomplete: "off",
     });
-    route.bind(() =>{
-        input.value = folder.title;
-        input.readOnly = View.CurrFolder() !== folder;
+    route.bind(() => {
+        input.innerText = folder.title;
     });
     input.addEventListener("click", () => {
-        if(View.CurrFolder() !== folder){
+        if (View.CurrFolder() !== folder) {
             View.Folder(folder);
         }
-    });
-    input.addEventListener("change", () => {
-        folder.title = input.value;
-        Flow.Reflow(route);
     });
 }
 
 function mkMain(route: Route) {
     route.applyProps({ id: "mainInner" });
+    route.bindCtl(mkViewHeader);
     route.bindCtl(mkNoteList);
     let btAddNote = route.child<HTMLButtonElement>("button", {
         type: "button",
@@ -114,8 +107,35 @@ function mkMain(route: Route) {
     btAddNote.addEventListener("click", () => {
         let note = DB.CreateNote();
         note.text = `new note ${new Date()}`;
-        if(View.CurrFolder()) note.folderId = View.CurrFolder()?.id;
+        if (View.CurrFolder()) note.folderId = View.CurrFolder()?.id;
         View.ForceAdd(note);
+        Flow.Dirty();
+    });
+}
+
+function mkViewHeader(route: Route) {
+    route.root("span", { className: "viewHeader" })
+    let prefix = route.child("span", { className: "prefix" });
+    route.bind(() => { prefix.innerText = View.CurrTitle(); });
+    let edit = route.child("span");
+    route.conditional(edit, () => !!View.CurrFolder(), mkEditFolderName);
+}
+
+function mkEditFolderName(route: Route){
+    let folder = View.CurrFolder();
+    if(!folder) return; // ?
+    route.child("span", {innerText: ":"});
+    let input = route.child<HTMLInputElement>("input", {
+        className: "edFolder",
+        type: "text",
+        placeholder: "Unnamed Folder",
+        autocomplete: "off",
+    });
+    route.bind(() => {
+        input.value = folder.title;
+    });
+    input.addEventListener("change", () => {
+        folder.title = input.value;
         Flow.Dirty();
     });
 }

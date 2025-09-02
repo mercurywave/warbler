@@ -9,6 +9,7 @@ class ViewData {
     private _fullResults: Note[] = [];
     public folder: Folder | Nil = null;
     public tag: string | Nil = null;
+    public title: string = "???";
 
     public get more(): number { return this._fullResults.length - this.currView.length; }
     public setResults(notes: Note[]) {
@@ -30,6 +31,9 @@ export namespace View {
     export function CurrTag(): string | Nil{
         return _data.tag;
     }
+    export function CurrTitle(): string {
+        return _data.title;
+    }
 
     function reset() {
         _data = new ViewData();
@@ -47,12 +51,14 @@ export namespace View {
         reset();
         let list = DB.AllNotes().filter(n => !n.folderId);
         _data.setResults(list);
+        _data.title = "Unsorted";
         finalize();
     }
 
     export function ShowAll() {
         reset();
         _data.setResults(DB.AllNotes());
+        _data.title = "All";
         finalize();
     }
 
@@ -61,6 +67,7 @@ export namespace View {
         let list = DB.AllNotes().filter(n => n.folderId === folder.id);
         _data.setResults(list);
         _data.folder = folder;
+        _data.title = "Folder";
         finalize();
     }
 }
