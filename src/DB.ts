@@ -47,7 +47,7 @@ export namespace DB {
             _notes.push(note);
         }
     }
-    
+
     async function loadHelper<T>(db: string): Promise<T[]> {
         let future = new Deferred<T[]>();
         let trans = _db.transaction(db, "readonly");
@@ -83,8 +83,24 @@ export namespace DB {
         return note;
     }
 
+    export function CreateFolder(): Folder {
+        
+        let now = new Date().toUTCString();
+        let id = crypto.randomUUID();
+        let inner: FolderData = {
+            id: id,
+            title: "",
+            v: 1,
+            creationUtc: now,
+            editsUtc: [],
+        };
+        let folder = new Folder(inner);
+        _folders.push(folder);
+        return folder;
+    }
+
     export async function SaveNote(note: Note): Promise<void> {
-        await saveHelper("folders", note._meta);
+        await saveHelper("notes", note._meta);
         note._needsDbSave = false;
         note._meta.needsFileSave = true;
     }
@@ -94,7 +110,7 @@ export namespace DB {
         folder._needsDbSave = false;
     }
 
-    async function saveHelper<T>(db: string, meta:T): Promise<void>{
+    async function saveHelper<T>(db: string, meta: T): Promise<void> {
         let future = new Deferred();
         let trans = _db.transaction([db], "readwrite");
         let store = trans.objectStore(db);
@@ -105,4 +121,5 @@ export namespace DB {
     }
 
     export function AllNotes(): Note[] { return _notes; }
+    export function AllFolders(): Folder[] { return _folders; }
 }

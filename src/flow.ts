@@ -27,7 +27,7 @@ export namespace Flow {
         }
     }
 
-    function Reflow(from?: Route) {
+    export function Reflow(from?: Route) {
         let index = 0;
 
         let routes = [...__allRoutes];

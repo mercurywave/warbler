@@ -1,5 +1,6 @@
 import { DB } from "./DB";
 import { Flow, Route } from "./flow";
+import { Folder } from "./folder";
 import { Note } from "./note";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -24,25 +25,17 @@ function mkRoot(route: Route) {
 function mkNavigation(route: Route) {
     route.root("div", { id: "navigation" });
     route.bindCtl(mkSearch);
-    let btAddNote = route.child<HTMLButtonElement>("button", {
-        type: "button",
-        innerText: "Add Note",
-    });
-    btAddNote.addEventListener("click", () => {
-        let note = DB.CreateNote();
-        note.text = `new note ${new Date()}`;
-        __mainPane = DB.AllNotes();
-        Flow.Dirty();
-    });
+    route.bindCtl(mkFolderList);
 }
-
 
 function mkSearch(route: Route) {
     let div = route.root("div", { id: "search" });
     let txtField = route.child<HTMLInputElement>("input", {
         type: "text", 
         id: "search-input", 
-        placeholder: "Search...",
+        placeholder: "Search ...", // the space currently tricks edge into NOT disrespecting autocomplete
+        autocomplete: "off",
+        ariaHidden: "true",
     });
     let dropDown = route.child<HTMLSelectElement>("select", {
         id: "search-list",
@@ -54,9 +47,53 @@ function mkSearch(route: Route) {
     });
 }
 
+function mkFolderList(route: Route){
+    route.root("div", { id: "folders" });
+    let header = route.child("div");
+    route.elem(header, "span", { innerText: "Folders" });
+    let btAddFolder = route.elem<HTMLButtonElement>(header, "button", {
+        id: "btAddFolder",
+        type: "button",
+        innerText: "+",
+        className: "btAdd",
+    });
+    btAddFolder.addEventListener("click", () => {
+        let folder = DB.CreateFolder();
+        folder.title = "New Folder";
+        Flow.Reflow();
+    });
+    let list = route.child("div");
+    route.bindArray(() => DB.AllFolders(), mkFolder, list);
+}
+
+function mkFolder(route: Route, folder: Folder){
+    let input = route.root<HTMLInputElement>("input", {
+        className: "folder",
+        type: "text",
+        placeholder: "Unnamed Folder",
+        autocomplete: "off",
+    });
+    route.bind(() => input.value = folder.title);
+    input.addEventListener("change", () => {
+        folder.title = input.value;
+        Flow.Reflow(route);
+    });
+}
+
 function mkMain(route: Route) {
     route.applyProps({ id: "mainInner" });
     route.bindCtl(mkNoteList);
+    let btAddNote = route.child<HTMLButtonElement>("button", {
+        type: "button",
+        innerText: "Add Note",
+        className: "btPrimary",
+    });
+    btAddNote.addEventListener("click", () => {
+        let note = DB.CreateNote();
+        note.text = `new note ${new Date()}`;
+        __mainPane = DB.AllNotes();
+        Flow.Dirty();
+    });
 }
 
 function mkNoteList(route: Route) {
