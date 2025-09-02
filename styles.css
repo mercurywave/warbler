@@ -95,16 +95,16 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     border-radius: 11px;
     border: 0;
-    outline: 1px solid #FEE0E0;
+    outline: 1px solid #869aa8;
     background-color: #526675;
-    color: #fff;
+    color: #FFF9E4;
     border-radius: 11px;
     box-shadow: 0;
     resize: none;
     overflow: hidden;
 }
 .bubble:focus{
-    outline: 1px solid #D33A2C !important;
+    outline: 1px solid #fff !important;
     background-color: #526675 !important;
-    color: #000  !important;
+    color: #fff  !important;
 }
