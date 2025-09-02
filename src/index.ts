@@ -121,10 +121,10 @@ function mkViewHeader(route: Route) {
     route.conditional(edit, () => !!View.CurrFolder(), mkEditFolderName);
 }
 
-function mkEditFolderName(route: Route){
+function mkEditFolderName(route: Route) {
     let folder = View.CurrFolder();
-    if(!folder) return; // ?
-    route.child("span", {innerText: ":"});
+    if (!folder) return; // ?
+    route.child("span", { innerText: ":" });
     let input = route.child<HTMLInputElement>("input", {
         className: "edFolder",
         type: "text",
@@ -146,7 +146,7 @@ function mkNoteList(route: Route) {
 }
 
 function mkNoteControl(route: Route, note: Note) {
-    route.root("div");
+    route.root("div", { className: "note" });
     let wrapper = route.child("div", { className: "bubbleWrap" });
     let edit = route.elem<HTMLTextAreaElement>(wrapper, "textarea", { className: "bubble", rows: 1 });
     route.bind(() => edit.value = note.text);

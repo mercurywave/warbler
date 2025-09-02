@@ -13,6 +13,7 @@ body {
 
 #navigation {
     width: 240px;
+    border-right:1px solid #202A33;
 }
 
 #main {
@@ -23,6 +24,7 @@ body {
 }
 
 #mainInner{
+    padding: 0 10px;
     max-width: 750px;
     width: 100%;
     display: flex;
@@ -124,6 +126,22 @@ body {
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
     border: 1px solid #fff;
+}
+
+
+.note {
+  animation: fadeInScale 300ms ease-out;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 
