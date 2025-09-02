@@ -1,4 +1,5 @@
 
+let __tree: Route;
 let __allRoutes: Route[] = [];
 let __scheduled: boolean = false;
 
@@ -8,11 +9,11 @@ export namespace Flow {
 
     export function Init(root: HTMLElement, builder: (route: Route) => void): HTMLElement {
         __allRoutes = [];
-        let rt = new Route(root, 0);
-        builder(rt);
-        if (!rt._root) throw 'no document root';
+        __tree = new Route(null, root);
+        builder(__tree);
+        if (!__tree._root) throw 'no document root';
         Reflow();
-        return rt._root;
+        return __tree._root;
     }
 
     export function Dirty() {
@@ -26,10 +27,13 @@ export namespace Flow {
         }
     }
 
-    function Reflow() {
+    function Reflow(from?: Route) {
         let index = 0;
 
         let routes = [...__allRoutes];
+        if(from){
+            routes = routes.filter(r => r.isDescendedFrom(from));
+        }
         let processed: Route[] = [];
         let more: boolean = true;
         while (more) {
@@ -57,15 +61,17 @@ export namespace Flow {
 type ListOrBound = any[] | (() => any[]);
 
 export class Route {
+    private _ancestor: Route | null;
     public _depth: number;
     public _boundValue: any;
     public _root: HTMLElement | Nil = null;
     private _actions: (() => void)[] = [];
     private _arrays: BoundList[] = [];
 
-    constructor(root: HTMLElement | Nil, depth: number, boundValue?: any) {
+    constructor(ancestor:Route | null, root: HTMLElement | Nil, boundValue?: any) {
+        this._ancestor = ancestor;
         this._root = root;
-        this._depth = depth;
+        this._depth = (ancestor?._depth ?? 0) + 1;
         this._boundValue = boundValue;
         __allRoutes.push(this);
     }
@@ -126,9 +132,15 @@ export class Route {
         });
     }
 
+    public conditionalStyle(host: HTMLElement, style: string, ifApply: () => boolean) {
+        this.bind(() => {
+            host.classList.toggle(style, ifApply());
+        });
+    }
+
     public bindCtl(builder: (route: Route) => void, parent?: HTMLElement) {
         if (!this._root) throw 'root not set';
-        let cRoute = new Route(parent, this._depth + 1);
+        let cRoute = new Route(this, parent);
         builder(cRoute);
         if (!cRoute._root) throw 'builder did not set an element';
         if (!parent) this._root.appendChild(cRoute._root);
@@ -151,6 +163,12 @@ export class Route {
         for (const bind of this._actions) {
             bind();
         }
+    }
+
+    public isDescendedFrom(route: Route): boolean{
+        if(this._ancestor == route) return true;
+        if(this._ancestor?.isDescendedFrom(route)) return true;
+        return false;
     }
 }
 
@@ -181,7 +199,7 @@ class BoundList {
             if (route)
                 bound = bound.filter(r => r !== route);
             else {
-                route = new Route(null, this.__parent._depth, o);
+                route = new Route(this.__parent, null, o);
                 this.__handler(route, o);
             }
             if (route._root)

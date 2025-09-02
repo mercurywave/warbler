@@ -1,6 +1,7 @@
 body {
     background-color: #14202B;
     color: #91969C;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 #mainWrap {
@@ -11,7 +12,7 @@ body {
 }
 
 #navigation {
-    width: 180px;
+    width: 240px;
 }
 
 #main {
@@ -45,7 +46,6 @@ body {
     transition: border .2s ease-in-out, box-shadow .2s ease-in-out;
     white-space: nowrap;
     word-break: break-word;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 #navigation button:active,
@@ -71,6 +71,59 @@ body {
     background-color: #334351;
     box-shadow: rgba(0, 0, 0, 0.12) 0 1px 3px 0 inset;
     color: #FFFFFF;
+}
+
+#search{ 
+    width: 95%;
+    margin: 3px 0;
+    align-items: center;
+    background-color: #202A33;
+    border: 1px solid #3C4A56;
+    border-radius: 11px;
+    box-sizing: border-box;
+    color: #FFF9E4;
+    line-height: 34px;
+    padding: 2px 12px;
+    text-align: left;
+    transition: border .2s ease-in-out, box-shadow .2s ease-in-out;
+    position: relative;
+}
+#search-input{
+    width: 100%;
+    background: none;
+    border: 0;
+    font-size: 1rem;
+    padding: 2px;
+    box-sizing: border-box;
+    outline: 0;
+    color: #FFF9E4;
+}
+#search-list{
+    position: absolute;
+    top: 100%; /* places it directly below the input */
+    left: 0;
+    width: 100%; /* match input width */
+    z-index: 999; /* float above other content */
+    margin: 0;
+    padding: 0;
+    background: #3C4A56;
+    overflow: hidden;
+    border: none;
+    outline: 0;
+}
+#search-list option {
+    padding: 5px;
+    cursor: pointer;
+    color: #fff;
+}
+#search-list option:checked {
+    /* you apparently can't really style the selected element, but you can fill it with a raw 1x1 gif of the color */
+    /* the color doesn't really do anything here */
+    background: #646281 repeat url("data:image/gif;base64,R0lGODdhAQABAIABAAAAAGRigSwAAAAAAQABAAACAkwBADs=");
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    border: 1px solid #fff;
 }
 
 
@@ -107,4 +160,8 @@ body {
     outline: 1px solid #fff !important;
     background-color: #526675 !important;
     color: #fff  !important;
+}
+
+.noDisp{
+    display: none;
 }

@@ -23,6 +23,7 @@ function mkRoot(route: Route) {
 
 function mkNavigation(route: Route) {
     route.root("div", { id: "navigation" });
+    route.bindCtl(mkSearch);
     let btAddNote = route.child<HTMLButtonElement>("button", {
         type: "button",
         innerText: "Add Note",
@@ -32,6 +33,24 @@ function mkNavigation(route: Route) {
         note.text = `new note ${new Date()}`;
         __mainPane = DB.AllNotes();
         Flow.Dirty();
+    });
+}
+
+
+function mkSearch(route: Route) {
+    let div = route.root("div", { id: "search" });
+    let txtField = route.child<HTMLInputElement>("input", {
+        type: "text", 
+        id: "search-input", 
+        placeholder: "Search...",
+    });
+    let dropDown = route.child<HTMLSelectElement>("select", {
+        id: "search-list",
+        size: 8,
+    });
+    route.conditionalStyle(dropDown, "noDisp", () => {
+        return !div.contains(document.activeElement) // is focus in here somewhere
+            || dropDown.childElementCount < 1;
     });
 }
 
