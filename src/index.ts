@@ -155,18 +155,45 @@ function mkNoteControl(route: Route, note: Note) {
         innerText: `created ${util.getRelativeTime(note.creationUtc)}`,
         title: `created ${note.creationUtc}`,
     });
+
     let wrapper = route.child("div", { className: "growWrap" });
     let edit = route.elem<HTMLTextAreaElement>(wrapper, "textarea");
     let updateSize = () => wrapper.dataset.replicatedValue = edit.value;
     edit.addEventListener("input", updateSize);
     route.bind(() => {
-        edit.value = note.text
+        edit.value = note.text;
         updateSize();
     });
     edit.addEventListener("change", () => {
         note.text = edit.value;
         Flow.Dirty();
     });
+
+    let footer = route.child("div", { className: "bubbleFooter" });
+    mkNoteFolderPicker(route, footer, note);
+}
+
+function mkNoteFolderPicker(route: Route, span: HTMLElement, note: Note) {
+    route.conditionalStyle(span, "noDisp", () => DB.AllFolders().length < 1);
+    route.elem(span, "span", { innerText: "🗀" });
+    let dropDown = route.elem<HTMLSelectElement>(span, "select");
+    route.bindArray(() => DB.AllFolders(), mkFolderOption, dropDown);
+    route.bind(() => {
+        dropDown.value = note.folder?.id ?? "";
+    });
+    dropDown.addEventListener("change", () => {
+        note.folderId = dropDown.value;
+        Flow.Dirty();
+    });
+}
+
+function mkFolderOption(route: Route, folder: Folder){
+    let opt = route.root<HTMLOptionElement>("option");
+    route.bind(() => {
+        opt.text = folder.title;
+    });
+    opt.value = folder.id;
+    return opt;
 }
 
 async function setup(): Promise<void> {

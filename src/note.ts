@@ -26,6 +26,7 @@ export class Note {
 
     public get folderId():string | Nil { return this.data.folderId; }
     public set folderId(value:string | Nil) {
+        if(value === "") value = undefined;
         this.data.folderId = value ?? undefined;
         this.FlagDirty();
     }

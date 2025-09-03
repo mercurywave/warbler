@@ -170,7 +170,7 @@ body {
     padding: 8px;
     border-radius: 11px;
     outline: 1px solid #869aa8;
-    background-color: #526675;
+    background-color: #263D51;
     border: 0;
     color: #FFF9E4;
     overflow: hidden;
@@ -233,12 +233,11 @@ body {
 
 .bubble:focus-within {
     outline: 1px solid #fff !important;
-    color: #fff !important;
 }
 
 .bubble textarea {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #526675;
+    background-color: #263D51;
     color: #FFF9E4;
     box-shadow: 0;
     overflow: hidden;
@@ -247,11 +246,31 @@ body {
     width: 100%;
     padding: 0;
 }
+.bubble textarea:focus {
+    color: #fff !important;
+}
 
 .bubble .noteCreation {
-    font-size: 8pt;
+    font-size: .7em;
     color: #A2A59B;
     margin-bottom: 0;
+}
+
+.bubbleFooter{
+    display: flex;
+    flex-direction: row;
+    font-size: .7em;
+    vertical-align: middle;
+    margin-top: 4px;
+    color: #A2A59B;
+}
+.bubbleFooter select{
+    font-size: .7em;
+    background:none;
+    border: none;
+    outline: 0;
+    color: #A2A59B;
+    max-width: 120px;
 }
 
 

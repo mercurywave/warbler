@@ -158,6 +158,26 @@ export class Route {
         }, handler, host);
     }
 
+    public stampArray<T>(list: ListOrBound<T>, handler: (elem: T) => HTMLElement | null, host?: HTMLElement | null) {
+        // more lightweight way to stamp out simple bindings, like option elements in a select
+        // CAUTION: this might be ill-concieved. If you use anything that can change internally, this skips a re-render.
+        if (!host) host = this._root;
+        if (!host) throw 'could not seat array';
+        let state: T[] = [];
+        this.bind(() => {
+            let goal = (typeof list === "function") ? list() : list;
+            if (goal.length == state.length && state.every((v, i) => v === goal[i]))
+                return; // no changes needed
+            state = goal;
+            host.innerHTML = '';
+            for (const obj of goal) {
+                let elem = handler(obj);
+                if (elem !== null)
+                    host.appendChild(elem);
+            }
+        });
+    }
+
     public bindArray<T>(list: ListOrBound<T>, handler: (route: Route, elem: T) => void, host?: HTMLElement | null): BoundList<T> {
         if (!host) host = this._root;
         if (!host) throw 'could not seat array';
