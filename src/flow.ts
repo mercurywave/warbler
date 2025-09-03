@@ -30,7 +30,7 @@ export namespace Flow {
         let index = 0;
 
         let routes = [...__allRoutes];
-        if(from){
+        if (from) {
             routes = routes.filter(r => r.isDescendedFrom(from));
         }
         let processed: Route[] = [];
@@ -52,8 +52,12 @@ export namespace Flow {
             }
         }
         setTimeout(() => {
-            __allRoutes = __allRoutes.filter(r => r._isConnected);
+            Cleanup();
         }, 0);
+    }
+
+    export function Cleanup() {
+        __allRoutes = __allRoutes.filter(r => r._isConnected);
     }
 }
 
@@ -67,7 +71,7 @@ export class Route {
     private _actions: (() => void)[] = [];
     private _arrays: BoundList[] = [];
 
-    constructor(ancestor:Route | null, root: HTMLElement | Nil, boundValue?: any) {
+    constructor(ancestor: Route | null, root: HTMLElement | Nil, boundValue?: any) {
         this._ancestor = ancestor;
         this._root = root;
         this._depth = (ancestor?._depth ?? 0) + 1;
@@ -145,12 +149,13 @@ export class Route {
         if (!parent) this._root.appendChild(cRoute._root);
     }
 
-    public bindArray(list: ListOrBound, handler: (route: Route, elem: any) => void, host?: HTMLElement | null) {
+    public bindArray(list: ListOrBound, handler: (route: Route, elem: any) => void, host?: HTMLElement | null): BoundList {
         if (!host) host = this._root;
         if (!host) throw 'could not seat array';
         let arr = new BoundList(this, host, list, handler);
         this._arrays.push(arr);
         arr.sync();
+        return arr;
     }
 
     public get _isConnected(): boolean { return this._root?.isConnected ?? false };
@@ -164,19 +169,22 @@ export class Route {
         }
     }
 
-    public isDescendedFrom(route: Route): boolean{
-        if(this._ancestor == route) return true;
-        if(this._ancestor?.isDescendedFrom(route)) return true;
+    public isDescendedFrom(route: Route): boolean {
+        if (this._ancestor == route) return true;
+        if (this._ancestor?.isDescendedFrom(route)) return true;
         return false;
     }
 }
 
-class BoundList {
+export class BoundList {
     private __list: ListOrBound;
     private __bound: Route[] = [];
     private __parent: Route;
     private __container: HTMLElement
     private __handler: (route: Route, elem: any) => void;
+    private __delayMs: number = 0;
+    private __deleteClass: string = "";
+    private __delaySlide: number = 0;
 
     public constructor(parent: Route, container: HTMLElement, list: ListOrBound, handler: (route: Route, elem: any) => void) {
         this.__parent = parent;
@@ -201,12 +209,12 @@ class BoundList {
                 route = new Route(this.__parent, null, o);
                 this.__handler(route, o);
             }
-            if (route._root){
+            if (route._root) {
                 children.push(route._root);
                 goal.push(route);
             }
         }
-        replaceChildrenPreserving(this.__container, children);
+        this.replaceChildrenPreserving(this.__container, children);
         this.__bound = goal;
     }
     private isInSync() {
@@ -218,26 +226,36 @@ class BoundList {
         }
         return true;
     }
-}
 
-function replaceChildrenPreserving<T extends HTMLElement>(
-    parent: HTMLElement,
-    newChildren: T[]
-): void {
-    const existing = Array.from(parent.children) as T[];
-
-    // Remove any children not in the new list
-    for (const child of existing) {
-        if (!newChildren.includes(child)) {
-            parent.removeChild(child);
-        }
+    public setAnimRemoval(msDelay: number, className: string) {
+        this.__delayMs = msDelay;
+        this.__deleteClass = className;
     }
 
-    // Insert or reorder new children
-    newChildren.forEach((child, i) => {
-        const current = parent.children[i];
-        if (current !== child) {
-            parent.insertBefore(child, current ?? null);
+    private replaceChildrenPreserving<T extends HTMLElement>(
+        parent: HTMLElement,
+        newChildren: T[]
+    ): void {
+        const existing = Array.from(parent.children) as T[];
+        const firstRects = existing.map(el => el.getBoundingClientRect());
+
+        // Remove any children not in the new list
+        for (const child of existing) {
+            if (!newChildren.includes(child)) {
+                if (this.__delayMs > 0) { // animated delay
+                    child.classList.add(this.__deleteClass);
+                    setTimeout(() => child.remove(), this.__delayMs);
+                }
+                else parent.removeChild(child);
+            }
         }
-    });
+
+        // Insert or reorder new children
+        newChildren.forEach((child, i) => {
+            const current = parent.children[i];
+            if (current !== child) {
+                parent.insertBefore(child, current ?? null);
+            }
+        });
+    }
 }

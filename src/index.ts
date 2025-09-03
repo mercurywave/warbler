@@ -142,7 +142,8 @@ function mkEditFolderName(route: Route) {
 
 function mkNoteList(route: Route) {
     route.root("div", { id: "notesMain" });
-    route.bindArray(() => View.CurrNotes(), mkNoteControl);
+    let bind = route.bindArray(() => View.CurrNotes(), mkNoteControl);
+    bind.setAnimRemoval(200, "fade-out");
 }
 
 function mkNoteControl(route: Route, note: Note) {
