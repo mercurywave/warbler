@@ -13,6 +13,7 @@ class ViewData {
 
     public get more(): number { return this._fullResults.length - this.currView.length; }
     public setResults(notes: Note[]) {
+        notes.sort((a,b) => a.creationUtc.getTime() - b.creationUtc.getTime());
         this._fullResults = notes;
         this.currView = notes; // TODO: truncate
     }
