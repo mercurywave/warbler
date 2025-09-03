@@ -169,6 +169,10 @@ function mkNoteControl(route: Route, note: Note) {
         Flow.Dirty();
     });
 
+    edit.spellcheck = false;
+    edit.addEventListener("focus", () => edit.spellcheck = true);
+    edit.addEventListener("blur", () => edit.spellcheck = false);
+
     let footer = route.child("div", { className: "bubbleFooter" });
     mkNoteFolderPicker(route, footer, note);
 }
