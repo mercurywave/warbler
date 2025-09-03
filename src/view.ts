@@ -48,7 +48,8 @@ export namespace View {
     }
 
     export function ForceAdd(note: Note){
-        _data.currView.push(note);
+        if(!_data.currView.includes(note))
+            _data.currView.push(note);
     }
 
     export function Unsorted() {
