@@ -2,9 +2,6 @@ body {
     background-color: #14202B;
     color: #FFF9E4;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-#mainWrap {
     display: flex;
     flex-direction: row;
     width: calc(100% - 20px);
@@ -19,16 +16,42 @@ body {
 #main {
     flex-grow: 1;
     display: flex;
-    flex-direction: row;
     justify-content: center;
 }
 
-#mainInner {
+#mainOuter {
     padding: 0 10px;
     max-width: 750px;
     width: 100%;
+    display: grid;
+}
+
+.mainInner {
     display: flex;
     flex-direction: column;
+    grid-area: 1 / 1;
+    animation: fadeIn 200ms ease-out;
+}
+
+.fade-out-view{
+    animation: fadeOut 200ms ease-in forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
 }
 
 .btPrimary {
@@ -167,6 +190,7 @@ body {
         transform: scale(0.95);
     }
 }
+
 
 
 

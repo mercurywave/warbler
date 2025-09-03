@@ -15,10 +15,11 @@ function initUi() {
 }
 
 function mkRoot(route: Route) {
-    route.applyProps({ id: "mainWrap" });
     route.bindCtl(mkNavigation);
-    let main = route.child("main");
-    route.bindCtl(mkMain, main);
+    let main = route.child("div", { id: "main" });
+    let outer = route.elem(main, "div", { id: "mainOuter" });
+    let bind = route.bindObject(() => View.UniqHash(), mkMain, outer);
+    bind.setAnimRemoval(200, "fade-out-view");
 }
 
 function mkNavigation(route: Route) {
@@ -95,8 +96,8 @@ function mkFolder(route: Route, folder: Folder) {
     });
 }
 
-function mkMain(route: Route) {
-    route.applyProps({ id: "mainInner" });
+function mkMain(route: Route, view: string) {
+    route.root("div", { className: "mainInner"});
     route.bindCtl(mkViewHeader);
     route.bindCtl(mkNoteList);
     let btAddNote = route.child<HTMLButtonElement>("button", {

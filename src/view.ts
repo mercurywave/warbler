@@ -34,6 +34,10 @@ export namespace View {
     export function CurrTitle(): string {
         return _data.title;
     }
+    export function UniqHash(): string {
+        // Can bind to this name to know if the user changed
+        return `${_data.title}: ${_data.folder?.id} || ${_data.tag}`;
+    }
 
     function reset() {
         _data = new ViewData();

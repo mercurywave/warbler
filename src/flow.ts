@@ -61,7 +61,7 @@ export namespace Flow {
     }
 }
 
-type ListOrBound = any[] | (() => any[]);
+type ListOrBound<T> = T[] | (() => T[]);
 
 export class Route {
     private _ancestor: Route | null;
@@ -69,7 +69,7 @@ export class Route {
     public _boundValue: any;
     public _root: HTMLElement | Nil = null;
     private _actions: (() => void)[] = [];
-    private _arrays: BoundList[] = [];
+    private _arrays: BoundList<any>[] = [];
 
     constructor(ancestor: Route | null, root: HTMLElement | Nil, boundValue?: any) {
         this._ancestor = ancestor;
@@ -149,7 +149,16 @@ export class Route {
         if (!parent) this._root.appendChild(cRoute._root);
     }
 
-    public bindArray(list: ListOrBound, handler: (route: Route, elem: any) => void, host?: HTMLElement | null): BoundList {
+    // bind to an object that might be swapped out, like a view
+    public bindObject<T>(getter: () => (T | null), handler: (route: Route, elem: T) => void, host?: HTMLElement | null): BoundList<T> {
+        return this.bindArray(() => {
+            let obj = getter();
+            if (obj) return [obj];
+            return [];
+        }, handler, host);
+    }
+
+    public bindArray<T>(list: ListOrBound<T>, handler: (route: Route, elem: T) => void, host?: HTMLElement | null): BoundList<T> {
         if (!host) host = this._root;
         if (!host) throw 'could not seat array';
         let arr = new BoundList(this, host, list, handler);
@@ -176,8 +185,8 @@ export class Route {
     }
 }
 
-export class BoundList {
-    private __list: ListOrBound;
+export class BoundList<T> {
+    private __list: ListOrBound<T>;
     private __bound: Route[] = [];
     private __parent: Route;
     private __container: HTMLElement
@@ -186,13 +195,13 @@ export class BoundList {
     private __deleteClass: string = "";
     private __delaySlide: number = 0;
 
-    public constructor(parent: Route, container: HTMLElement, list: ListOrBound, handler: (route: Route, elem: any) => void) {
+    public constructor(parent: Route, container: HTMLElement, list: ListOrBound<T>, handler: (route: Route, elem: any) => void) {
         this.__parent = parent;
         this.__container = container;
         this.__list = list;
         this.__handler = handler;
     }
-    private getList(): object[] {
+    private getList(): T[] {
         return (typeof this.__list === "function") ? this.__list() : this.__list;
     }
     public sync() {
