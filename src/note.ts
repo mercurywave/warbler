@@ -33,6 +33,7 @@ export class Note {
         let id = this.folderId;
         return DB.AllFolders().find(f => f.id === id);
     }
+    public get creationUtc(): Date { return new Date(this.data.creationUtc); }
 }
 
 // main interface, stored in indexdb

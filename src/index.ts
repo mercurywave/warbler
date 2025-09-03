@@ -2,6 +2,7 @@ import { DB } from "./DB";
 import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
 import { Note } from "./note";
+import { util } from "./util";
 import { View } from "./view";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -97,7 +98,7 @@ function mkFolder(route: Route, folder: Folder) {
 }
 
 function mkMain(route: Route, view: string) {
-    route.root("div", { className: "mainInner"});
+    route.root("div", { className: "mainInner" });
     route.bindCtl(mkViewHeader);
     route.bindCtl(mkNoteList);
     let btAddNote = route.child<HTMLButtonElement>("button", {
@@ -148,10 +149,20 @@ function mkNoteList(route: Route) {
 }
 
 function mkNoteControl(route: Route, note: Note) {
-    route.root("div", { className: "note" });
-    let wrapper = route.child("div", { className: "bubbleWrap" });
-    let edit = route.elem<HTMLTextAreaElement>(wrapper, "textarea", { className: "bubble", rows: 1 });
-    route.bind(() => edit.value = note.text);
+    route.root("div", { className: "bubble" });
+    route.child("div", {
+        className: "noteCreation",
+        innerText: `created ${util.getRelativeTime(note.creationUtc)}`,
+        title: `created ${note.creationUtc}`,
+    });
+    let wrapper = route.child("div", { className: "growWrap" });
+    let edit = route.elem<HTMLTextAreaElement>(wrapper, "textarea");
+    let updateSize = () => wrapper.dataset.replicatedValue = edit.value;
+    edit.addEventListener("input", updateSize);
+    route.bind(() => {
+        edit.value = note.text
+        updateSize();
+    });
     edit.addEventListener("change", () => {
         note.text = edit.value;
         Flow.Dirty();

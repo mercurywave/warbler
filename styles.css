@@ -33,7 +33,7 @@ body {
     animation: fadeIn 200ms ease-out;
 }
 
-.fade-out-view{
+.fade-out-view {
     animation: fadeOut 200ms ease-in forwards;
 }
 
@@ -41,14 +41,17 @@ body {
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
 }
+
 @keyframes fadeOut {
     from {
         opacity: 1;
     }
+
     to {
         opacity: 0;
     }
@@ -159,9 +162,20 @@ body {
 }
 
 
-.note {
+.bubble {
     animation: fadeInScale 200ms ease-out;
+    width: calc(100% - 12px);
+    margin: 6px 4px 6px 4px;
+    display: grid;
+    padding: 8px;
+    border-radius: 11px;
+    outline: 1px solid #869aa8;
+    background-color: #526675;
+    border: 0;
+    color: #FFF9E4;
+    overflow: hidden;
 }
+
 
 @keyframes fadeInScale {
     from {
@@ -191,46 +205,53 @@ body {
     }
 }
 
-
-
-
-.bubbleWrap {
-    width: 100%;
-    margin: 6px 4px;
+/* This enables auto-sizing the text area */
+.growWrap {
     display: grid;
 }
 
-.bubbleWrap::after {
-    padding: 8px;
+.growWrap::after {
     content: attr(data-replicated-value) " ";
     white-space: pre-wrap;
     visibility: hidden;
 }
 
-.bubbleWrap>textarea,
-.bubbleWrap::after {
-    /* Place on top of each other */
-    grid-area: 1 / 1 / 2 / 2;
-}
-
-.bubble {
-    padding: 8px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    border-radius: 11px;
-    border: 0;
-    outline: 1px solid #869aa8;
-    background-color: #526675;
-    color: #FFF9E4;
-    border-radius: 11px;
-    box-shadow: 0;
+.growWrap>textarea {
     resize: none;
     overflow: hidden;
 }
 
-.bubble:focus {
+.growWrap>textarea,
+.growWrap::after {
+    /* Identical styling required!! */
+    border: 0;
+    font: inherit;
+
+    grid-area: 1 / 1 / 2 / 2;
+}
+
+
+.bubble:focus-within {
     outline: 1px solid #fff !important;
-    background-color: #526675 !important;
     color: #fff !important;
+}
+
+.bubble textarea {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #526675;
+    color: #FFF9E4;
+    box-shadow: 0;
+    overflow: hidden;
+    border: 0;
+    outline: 0;
+    width: 100%;
+    padding: 0;
+}
+
+.bubble .noteCreation {
+    font-size: 8pt;
+    color: #A2A59B;
+    margin-bottom: 0;
 }
 
 

@@ -3,23 +3,56 @@
 export type Nil = null | undefined;
 
 export namespace util {
-    
-    export function ellipsize(text:string, maxLength: number) {
+
+    export function ellipsize(text: string, maxLength: number) {
         if (text.length > maxLength) {
-          return text.slice(0, maxLength - 3) + "...";
+            return text.slice(0, maxLength - 3) + "...";
         }
         return text;
     }
 
-    export function deepCopy(obj: any):any{
+    export function deepCopy(obj: any): any {
         return JSON.parse(JSON.stringify(obj));
     }
+    export function getRelativeTime(date: Date): string {
+        const now = new Date();
+        const diffMs = date.getTime() - now.getTime();
+
+        const units: Intl.RelativeTimeFormatUnit[] = [
+            'year',    // 0
+            'month',   // 1
+            'day',     // 2
+            'hour',    // 3
+            'minute',  // 4
+            'second'   // 5
+        ];
+
+        const divisors = [
+            1000 * 60 * 60 * 24 * 365, // year
+            1000 * 60 * 60 * 24 * 30,  // month
+            1000 * 60 * 60 * 24,       // day
+            1000 * 60 * 60,            // hour
+            1000 * 60,                 // minute
+            1000                      // second
+        ];
+
+        const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+
+        for (let i = 0; i < units.length; i++) {
+            const diff = diffMs / divisors[i];
+            if (Math.abs(diff) >= 1) {
+                return rtf.format(Math.round(diff), units[i]);
+            }
+        }
+        return rtf.format(0, 'second');
+    }
+
 }
 
 export class Deferred<T> implements Promise<T> {
 
     private _resolveSelf!: ((value: T | PromiseLike<T>) => void);
-    private _rejectSelf!:((value: T | PromiseLike<T>) => void);
+    private _rejectSelf!: ((value: T | PromiseLike<T>) => void);
     private promise: Promise<T>
 
     constructor() {
@@ -28,7 +61,7 @@ export class Deferred<T> implements Promise<T> {
             this._rejectSelf = reject
         });
     }
-    get [Symbol.toStringTag](): string{ return "Deferred"; }
+    get [Symbol.toStringTag](): string { return "Deferred"; }
 
     public then<TResult1 = T, TResult2 = never>(
         onfulfilled?: ((value: T) =>
