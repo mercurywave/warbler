@@ -314,10 +314,15 @@ body {
     font-weight: 500;
     background: none;
     border: 0;
-    outline: 0;
+    outline: 1px solid #3C4A56;
+    border-radius: 3px;
     color: #A2A59B;
     font-size: .7em;
     margin: 0 10px 0 0;
+}
+
+.btAddSubNote:hover{
+    outline: 1px solid #586169;
 }
 
 
