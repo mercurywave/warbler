@@ -9,21 +9,42 @@ body {
 }
 
 #navigation {
-    width: 240px;
+    width: 200px;
     border-right: 1px solid #202A33;
 }
 
 #main {
     flex-grow: 1;
     display: flex;
+    flex-direction: column;
     justify-content: center;
+    height: 100%;
+    padding: 0 10px 0 0;
 }
 
 #mainOuter {
     padding: 0 10px;
     max-width: 750px;
+    flex-basis: auto;
     width: 100%;
+    height: 100%;
     display: grid;
+    overflow: auto;
+}
+
+#mainOuter::-webkit-scrollbar {
+    width: 4px;
+}
+
+#mainOuter::-webkit-scrollbar-track {
+    border-radius: 3px;
+    background-color: #14202B;
+    border: 0;
+}
+
+#mainOuter::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background-color: #2c3e50;
 }
 
 .mainInner {
@@ -31,6 +52,11 @@ body {
     flex-direction: column;
     grid-area: 1 / 1;
     animation: fadeIn 200ms ease-out;
+    margin-right: 10px;
+}
+
+.scrollPad{
+    height: 75px;
 }
 
 .fade-out-view {
@@ -58,7 +84,10 @@ body {
 }
 
 .btPrimary {
-    width: 95%;
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+
     margin: 3px 0;
     align-items: center;
     background-color: #202A33;
@@ -246,6 +275,7 @@ body {
     width: 100%;
     padding: 0;
 }
+
 .bubble textarea:focus {
     color: #fff !important;
 }
@@ -256,7 +286,7 @@ body {
     margin-bottom: 0;
 }
 
-.bubbleFooter{
+.bubbleFooter {
     display: flex;
     flex-direction: row;
     font-size: .7em;
@@ -264,9 +294,10 @@ body {
     margin-top: 4px;
     color: #A2A59B;
 }
-.bubbleFooter select{
+
+.bubbleFooter select {
     font-size: .7em;
-    background:none;
+    background: none;
     border: none;
     outline: 0;
     color: #A2A59B;

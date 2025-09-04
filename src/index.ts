@@ -18,9 +18,22 @@ function initUi() {
 function mkRoot(route: Route) {
     route.bindCtl(mkNavigation);
     let main = route.child("div", { id: "main" });
+    
     let outer = route.elem(main, "div", { id: "mainOuter" });
     let bind = route.bindObject(() => View.UniqHash(), mkMain, outer);
     bind.setAnimRemoval(200, "fade-out-view");
+
+    let btAddNote = route.child<HTMLButtonElement>("button", {
+        type: "button",
+        innerText: "+ Add Note",
+        className: "btPrimary",
+    });
+    btAddNote.addEventListener("click", () => {
+        let note = DB.CreateNote();
+        if (View.CurrFolder()) note.folderId = View.CurrFolder()?.id;
+        View.ForceAdd(note);
+        Flow.Dirty();
+    });
 }
 
 function mkNavigation(route: Route) {
@@ -101,22 +114,11 @@ function mkMain(route: Route, view: string) {
     route.root("div", { className: "mainInner" });
     route.bindCtl(mkViewHeader);
     route.bindCtl(mkNoteList);
-    let btAddNote = route.child<HTMLButtonElement>("button", {
-        type: "button",
-        innerText: "Add Note",
-        className: "btPrimary",
-    });
-    btAddNote.addEventListener("click", () => {
-        let note = DB.CreateNote();
-        note.text = `new note ${new Date()}`;
-        if (View.CurrFolder()) note.folderId = View.CurrFolder()?.id;
-        View.ForceAdd(note);
-        Flow.Dirty();
-    });
+    route.child("div", {className: "scrollPad"})
 }
 
 function mkViewHeader(route: Route) {
-    route.root("span", { className: "viewHeader" })
+    route.root("span", { className: "viewHeader" });
     let prefix = route.child("span", { className: "prefix" });
     route.bind(() => { prefix.innerText = View.CurrTitle(); });
     let edit = route.child("span");
