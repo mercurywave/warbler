@@ -3,13 +3,14 @@ import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
 import { Note } from "./note";
 import { util } from "./util";
-import { View } from "./view";
+import { View, ViewData } from "./view";
 
 
 export function mkMain(route: Route, view: string) {
     route.root("div", { className: "mainInner" });
     route.bindCtl(mkViewHeader);
-    route.bindCtl(mkNoteList);
+    let viewContainer = route.child("div", { className: "viewContainer" });
+    route.bindObject(() => View.CurrView(), mkNoteList, viewContainer);
     route.child("div", { className: "scrollPad" })
 }
 
@@ -40,9 +41,9 @@ function mkEditFolderName(route: Route) {
     });
 }
 
-function mkNoteList(route: Route) {
+function mkNoteList(route: Route, view: ViewData) {
     route.root("div", { id: "notesMain" });
-    let bind = route.bindArray(() => View.CurrNotes(), mkNoteControl);
+    let bind = route.bindArray(() => view.currView, mkNoteControl);
     bind.setAnimRemoval(200, "fade-out");
 }
 
@@ -78,14 +79,14 @@ function mkNoteFooter(route: Route, span: HTMLElement, note: Note) {
         className: "btAddSubNote",
     });
     btAdd.addEventListener("click", () => {
-        if(note.isChild) return;
+        if (note.isChild) return;
         let child = DB.CreateNote();
         note.addChild(child);
         View.ForceAdd(child);
     });
     route.conditionalStyle(btAdd, "noDisp", () => note.isChild);
     mkNoteFolderPicker(route, span, note);
-    
+
     route.elem(span, "span", {
         className: "noteCreation",
         innerText: `created ${util.getRelativeTime(note.creationUtc)}`,

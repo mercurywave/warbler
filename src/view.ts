@@ -4,7 +4,7 @@ import { Folder } from "./folder";
 import { Note } from "./note";
 import { Nil } from "./util";
 
-class ViewData {
+export class ViewData {
     public currView: Note[] = [];
     private _fullResults: Note[] = [];
     public folder: Folder | Nil = null;
@@ -44,6 +44,8 @@ class ViewData {
 
 export namespace View {
     let _data: ViewData = new ViewData();
+
+    export function CurrView(): ViewData { return _data; }
 
     export function CurrNotes(): Note[] {
         return _data.currView;
