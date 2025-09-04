@@ -49,8 +49,11 @@ function mkNavigation(route: Route) {
     });
     let btUnsorted = route.child<HTMLButtonElement>("button", {
         type: "button",
-        innerText: "Unsorted",
         className: "btNavigate",
+    });
+    route.bind(() => {
+        let cnt = DB.AllNotes().filter(n => !n.folder).length;
+        btUnsorted.innerText = 'Unsorted' + (cnt > 0 ? ` (${cnt})` : '');
     });
     btUnsorted.addEventListener("click", () => {
         View.Unsorted();
