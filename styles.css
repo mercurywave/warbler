@@ -234,6 +234,12 @@ body {
     }
 }
 
+.childNote {
+    margin-left: 20px;
+    width: calc(100% - 12px - 20px);
+    background-color: #213647;
+}
+
 /* This enables auto-sizing the text area */
 .growWrap {
     display: grid;
@@ -266,7 +272,7 @@ body {
 
 .bubble textarea {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #263D51;
+    background-color: transparent;
     color: #FFF9E4;
     box-shadow: 0;
     overflow: hidden;
@@ -302,6 +308,16 @@ body {
     outline: 0;
     color: #A2A59B;
     max-width: 120px;
+}
+
+.bubbleFooter button {
+    font-weight: 500;
+    background: none;
+    border: 0;
+    outline: 0;
+    color: #A2A59B;
+    font-size: .7em;
+    margin: 0 10px 0 0;
 }
 
 

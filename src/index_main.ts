@@ -10,7 +10,7 @@ export function mkMain(route: Route, view: string) {
     route.root("div", { className: "mainInner" });
     route.bindCtl(mkViewHeader);
     route.bindCtl(mkNoteList);
-    route.child("div", {className: "scrollPad"})
+    route.child("div", { className: "scrollPad" })
 }
 
 function mkViewHeader(route: Route) {
@@ -47,7 +47,8 @@ function mkNoteList(route: Route) {
 }
 
 function mkNoteControl(route: Route, note: Note) {
-    route.root("div", { className: "bubble" });
+    let root = route.root("div", { className: "bubble" });
+    route.conditionalStyle(root, "childNote", () => note.isChild);
     route.child("div", {
         className: "noteCreation",
         innerText: `created ${util.getRelativeTime(note.creationUtc)}`,
@@ -72,11 +73,27 @@ function mkNoteControl(route: Route, note: Note) {
     edit.addEventListener("blur", () => edit.spellcheck = false);
 
     let footer = route.child("div", { className: "bubbleFooter" });
-    mkNoteFolderPicker(route, footer, note);
+    mkNoteFooter(route, footer, note);
+}
+
+function mkNoteFooter(route: Route, span: HTMLElement, note: Note) {
+    let btAdd = route.elem<HTMLButtonElement>(span, "button", {
+        type: "button",
+        innerText: "+ Sub Note",
+        className: "btAddSubNote",
+    });
+    btAdd.addEventListener("click", () => {
+        if(note.isChild) return;
+        let child = DB.CreateNote();
+        note.addChild(child);
+        View.ForceAdd(child);
+    });
+    route.conditionalStyle(btAdd, "noDisp", () => note.isChild);
+    mkNoteFolderPicker(route, span, note);
 }
 
 function mkNoteFolderPicker(route: Route, span: HTMLElement, note: Note) {
-    route.conditionalStyle(span, "noDisp", () => DB.AllFolders().length < 1);
+    route.conditionalStyle(span, "noDisp", () => note.isChild || DB.AllFolders().length < 1);
     route.elem(span, "span", { innerText: "🗀" });
     let dropDown = route.elem<HTMLSelectElement>(span, "select");
     route.bindArray(() => DB.AllFolders(), mkFolderOption, dropDown);
@@ -89,7 +106,7 @@ function mkNoteFolderPicker(route: Route, span: HTMLElement, note: Note) {
     });
 }
 
-function mkFolderOption(route: Route, folder: Folder){
+function mkFolderOption(route: Route, folder: Folder) {
     let opt = route.root<HTMLOptionElement>("option");
     route.bind(() => {
         opt.text = folder.title;

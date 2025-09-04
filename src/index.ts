@@ -31,7 +31,6 @@ function mkRoot(route: Route) {
         let note = DB.CreateNote();
         if (View.CurrFolder()) note.folderId = View.CurrFolder()?.id;
         View.ForceAdd(note);
-        Flow.Dirty();
     });
 }
 

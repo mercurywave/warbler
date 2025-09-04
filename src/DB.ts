@@ -1,6 +1,6 @@
 import { Folder, FolderData } from "./folder";
 import { Note, NoteData, NoteMeta } from "./note";
-import { Deferred } from "./util";
+import { Deferred, Nil } from "./util";
 
 export namespace DB {
     let _db: IDBDatabase;
@@ -46,6 +46,11 @@ export namespace DB {
             let note = new Note(m);
             _notes.push(note);
         }
+        for (const note of _notes) {
+            // relationship is stored on the parent before the child is stored
+            // this just quietly papers over that, though may cause a headach someday
+            note._meta.data.childrenIds = note._meta.data.childrenIds.filter(c => !!GetNoteById(c));
+        }
     }
 
     async function loadHelper<T>(db: string): Promise<T[]> {
@@ -84,7 +89,6 @@ export namespace DB {
     }
 
     export function CreateFolder(): Folder {
-        
         let now = new Date().toUTCString();
         let id = crypto.randomUUID();
         let inner: FolderData = {
@@ -121,5 +125,13 @@ export namespace DB {
     }
 
     export function AllNotes(): Note[] { return _notes; }
+    export function AllParents(): Note[] { return _notes.filter(n => !n.isChild); }
     export function AllFolders(): Folder[] { return _folders; }
+
+    export function TryGetParent(note: Note): Note | Nil {
+        return _notes.find(n => n.childrenIds.includes(note.id));
+    }
+    export function GetNoteById(id: string): Note | Nil {
+        return _notes.find(n => n.id === id);
+    }
 }
