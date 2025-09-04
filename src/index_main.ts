@@ -49,11 +49,6 @@ function mkNoteList(route: Route) {
 function mkNoteControl(route: Route, note: Note) {
     let root = route.root("div", { className: "bubble" });
     route.conditionalStyle(root, "childNote", () => note.isChild);
-    route.child("div", {
-        className: "noteCreation",
-        innerText: `created ${util.getRelativeTime(note.creationUtc)}`,
-        title: `created ${note.creationUtc}`,
-    });
 
     let wrapper = route.child("div", { className: "growWrap" });
     let edit = route.elem<HTMLTextAreaElement>(wrapper, "textarea");
@@ -90,6 +85,12 @@ function mkNoteFooter(route: Route, span: HTMLElement, note: Note) {
     });
     route.conditionalStyle(btAdd, "noDisp", () => note.isChild);
     mkNoteFolderPicker(route, span, note);
+    
+    route.elem(span, "span", {
+        className: "noteCreation",
+        innerText: `created ${util.getRelativeTime(note.creationUtc)}`,
+        title: `created ${note.creationUtc}`,
+    });
 }
 
 function mkNoteFolderPicker(route: Route, span: HTMLElement, note: Note) {

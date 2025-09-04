@@ -287,9 +287,9 @@ body {
 }
 
 .bubble .noteCreation {
-    font-size: .7em;
     color: #A2A59B;
-    margin-bottom: 0;
+    margin-left: 20px;
+    font-size: .7em;
 }
 
 .bubbleFooter {
