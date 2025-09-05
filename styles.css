@@ -401,3 +401,18 @@ body {
 .noDisp {
     display: none;
 }
+
+.settingHead{
+    font-weight: 600;
+    font-size: larger;
+    margin-left: 5px;
+}
+
+.section{
+    margin-left: 5px;
+}
+
+.lblSet{
+    margin-top: 15px;
+    margin-bottom: 4px;
+}

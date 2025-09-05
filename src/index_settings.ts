@@ -10,6 +10,7 @@ export interface ISettings {
 export type sTranscriptType = "WhisperDock" | Nil;
 
 let _config: ISettings;
+export function Config(): ISettings { return _config; }
 export function LoadSettings() {
     let str = window.localStorage.getItem("warbler-settings");
     if (str) try { _config = JSON.parse(str) } catch { ResetSettings(); }
@@ -21,11 +22,10 @@ function ResetSettings() {
     };
 }
 function SaveSettings() {
-    //window.localStorage.setItem("warbler-settings", JSON.stringify(_config));
+    window.localStorage.setItem("warbler-settings", JSON.stringify(_config));
     Flow.Dirty();
 }
 
-export function Config(): ISettings { return _config; }
 
 
 export function mkSettings(route: Route, page: eSettingsPage) {
@@ -50,7 +50,7 @@ function mkTranscription(route: Route) {
 function mkTranscriptMode(route: Route) {
     lbl(route, "Transcription Service:");
     let opts: Option[] = [
-        ["", ""],
+        ["", "Disabled"],
         ["WhisperDock", "WhisperDock"],
     ];
     boundDropDown(route, opts, 
