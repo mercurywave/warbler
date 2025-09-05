@@ -99,7 +99,9 @@ export class Route {
         return elem;
     }
 
-    public elem<T extends HTMLElement>(parent: HTMLElement, elemName: keyof HTMLElementTagNameMap, props?: Partial<T>): T {
+    public elem<T extends HTMLElement>(parent: HTMLElement | Nil, elemName: keyof HTMLElementTagNameMap, props?: Partial<T>): T {
+        if (!parent) parent = this._root;
+        if(!parent) throw 'could not place elem';
         let elem = document.createElement(elemName) as T;
         this._applyProps(elem, props);
         parent.appendChild(elem);

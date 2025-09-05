@@ -2,6 +2,7 @@ import { DB } from "./DB";
 import { Flow, Route } from "./flow";
 import { mkMain } from "./index_main";
 import { mkNavigation } from "./index_navigation";
+import { LoadSettings } from "./index_settings";
 import { View } from "./view";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -35,6 +36,7 @@ function mkRoot(route: Route) {
 }
 
 async function setup(): Promise<void> {
+    LoadSettings();
     await DB.Init();
     View.ShowAll();
     Flow.Dirty();

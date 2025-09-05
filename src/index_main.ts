@@ -1,16 +1,17 @@
 import { DB } from "./DB";
 import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
+import { mkSettings } from "./index_settings";
 import { Note } from "./note";
 import { util } from "./util";
-import { View, ViewData } from "./view";
+import { eView, View, ViewData } from "./view";
 
 
 export function mkMain(route: Route, view: ViewData) {
     route.root("div", { className: "mainInner" });
     route.bindCtl(mkViewHeader);
     let viewContainer = route.child("div", { className: "viewContainer" });
-    route.bindObject(() => View.CurrView(), mkNoteList, viewContainer);
+    route.bindObject(() => View.CurrView(), mkMainPane, viewContainer);
     route.child("div", { className: "scrollPad" })
 }
 
@@ -41,10 +42,15 @@ function mkEditFolderName(route: Route) {
     });
 }
 
-function mkNoteList(route: Route, view: ViewData) {
+function mkMainPane(route: Route, view: ViewData) {
     route.root("div", { id: "notesMain" });
-    let bind = route.bindArray(() => view.currView, mkNoteControl);
-    bind.setAnimRemoval(200, "fade-out");
+    if (view.type === eView.Settings) {
+        mkSettings(route, view.settings);
+    }
+    else {
+        let bind = route.bindArray(() => view.currView, mkNoteControl);
+        bind.setAnimRemoval(200, "fade-out");
+    }
 }
 
 function mkNoteControl(route: Route, note: Note) {
