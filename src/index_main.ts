@@ -6,7 +6,7 @@ import { util } from "./util";
 import { View, ViewData } from "./view";
 
 
-export function mkMain(route: Route, view: string) {
+export function mkMain(route: Route, view: ViewData) {
     route.root("div", { className: "mainInner" });
     route.bindCtl(mkViewHeader);
     let viewContainer = route.child("div", { className: "viewContainer" });
@@ -17,13 +17,13 @@ export function mkMain(route: Route, view: string) {
 function mkViewHeader(route: Route) {
     route.root("span", { className: "viewHeader" });
     let prefix = route.child("span", { className: "prefix" });
-    route.bind(() => { prefix.innerText = View.CurrTitle(); });
+    route.bind(() => { prefix.innerText = View.CurrView().title; });
     let edit = route.child("span");
-    route.conditional(edit, () => !!View.CurrFolder(), mkEditFolderName);
+    route.conditional(edit, () => !!View.CurrView().folder, mkEditFolderName);
 }
 
 function mkEditFolderName(route: Route) {
-    let folder = View.CurrFolder();
+    let folder = View.CurrView().folder;
     if (!folder) return; // ?
     route.child("span", { innerText: ":" });
     let input = route.child<HTMLInputElement>("input", {

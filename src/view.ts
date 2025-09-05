@@ -5,12 +5,17 @@ import { Note } from "./note";
 import { Nil } from "./util";
 
 export class ViewData {
+    public type: eView;
     public currView: Note[] = [];
     private _fullResults: Note[] = [];
     public folder: Folder | Nil = null;
     public tag: string | Nil = null;
     public title: string = "???";
     public isChron: boolean = false; // chronologically ordered
+
+    public constructor(type: eView) {
+        this.type = type;
+    }
 
     public get more(): number { return this._fullResults.length - this.currView.length; }
 
@@ -42,32 +47,17 @@ export class ViewData {
     }
 }
 
+export enum eView {
+    None, All, Unsorted, Folder, Tag, Settings
+};
+
 export namespace View {
-    let _data: ViewData = new ViewData();
+    let _data: ViewData = new ViewData(eView.None);
 
     export function CurrView(): ViewData { return _data; }
 
-    export function CurrNotes(): Note[] {
-        return _data.currView;
-    }
-
-    export function CurrFolder(): Folder | Nil {
-        return _data.folder;
-    }
-    export function CurrTag(): string | Nil {
-        return _data.tag;
-    }
-    export function CurrTitle(): string {
-        return _data.title;
-    }
-    export function IsChron(): boolean { return _data.isChron; }
-    export function UniqHash(): string {
-        // Can bind to this name to know if the user changed
-        return `${_data.title}: ${_data.folder?.id} || ${_data.tag}`;
-    }
-
-    function reset() {
-        _data = new ViewData();
+    function reset(type: eView) {
+        _data = new ViewData(type);
     }
 
     function finalize() {
@@ -80,7 +70,7 @@ export namespace View {
     }
 
     export function Unsorted() {
-        reset();
+        reset(eView.Unsorted);
         let list = DB.AllParents().filter(n => !n.folderId);
         _data.setChronResults(list);
         _data.title = "Unsorted";
@@ -88,14 +78,14 @@ export namespace View {
     }
 
     export function ShowAll() {
-        reset();
+        reset(eView.All);
         _data.setChronResults(DB.AllParents());
         _data.title = "All";
         finalize();
     }
 
     export function Folder(folder: Folder) {
-        reset();
+        reset(eView.Folder);
         let list = DB.AllParents().filter(n => n.folderId === folder.id);
         _data.setChronResults(list);
         _data.folder = folder;

@@ -19,7 +19,7 @@ function mkRoot(route: Route) {
     let main = route.child("div", { id: "main" });
     
     let outer = route.elem(main, "div", { id: "mainOuter" });
-    let bind = route.bindObject(() => View.UniqHash(), mkMain, outer);
+    let bind = route.bindObject(() => View.CurrView(), mkMain, outer);
     bind.setAnimRemoval(200, "fade-out-view");
 
     let btAddNote = route.child<HTMLButtonElement>("button", {
@@ -29,7 +29,7 @@ function mkRoot(route: Route) {
     });
     btAddNote.addEventListener("click", () => {
         let note = DB.CreateNote();
-        if (View.CurrFolder()) note.folderId = View.CurrFolder()?.id;
+        if (View.CurrView().folder) note.folderId = View.CurrView().folder?.id;
         View.ForceAdd(note);
     });
 }

@@ -76,7 +76,7 @@ function mkFolder(route: Route, folder: Folder) {
         input.innerText = folder.title;
     });
     input.addEventListener("click", () => {
-        if (View.CurrFolder() !== folder) {
+        if (View.CurrView().folder !== folder) {
             View.Folder(folder);
         }
     });
