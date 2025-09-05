@@ -11,6 +11,8 @@ body {
 #navigation {
     width: 200px;
     border-right: 1px solid #202A33;
+    display: flex;
+    flex-direction: column;
 }
 
 #main {
@@ -340,6 +342,10 @@ body {
 .btNavigate:hover {
     outline: 1px solid #3C4A56;
     border-radius: 6px;
+}
+
+#folders {
+    flex-grow: 2;
 }
 
 .btAdd {

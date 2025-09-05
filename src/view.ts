@@ -6,6 +6,7 @@ import { Nil } from "./util";
 
 export class ViewData {
     public type: eView;
+    public settings: eSettingsPage = eSettingsPage.None;
     public currView: Note[] = [];
     private _fullResults: Note[] = [];
     public folder: Folder | Nil = null;
@@ -51,6 +52,10 @@ export enum eView {
     None, All, Unsorted, Folder, Tag, Settings
 };
 
+export enum eSettingsPage {
+    None, Main
+};
+
 export namespace View {
     let _data: ViewData = new ViewData(eView.None);
 
@@ -90,6 +95,14 @@ export namespace View {
         _data.setChronResults(list);
         _data.folder = folder;
         _data.title = "Folder";
+        finalize();
+    }
+
+    export function Settings(page: eSettingsPage)
+    {
+        reset(eView.Settings);
+        _data.settings = page;
+        _data.title = "Settings";
         finalize();
     }
 }

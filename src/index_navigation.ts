@@ -1,7 +1,7 @@
 import { DB } from "./DB";
 import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
-import { View } from "./view";
+import { eSettingsPage, View } from "./view";
 
 
 
@@ -28,6 +28,15 @@ export function mkNavigation(route: Route) {
         View.Unsorted();
     });
     route.bindCtl(mkFolderList);
+    let btSettings = route.child<HTMLButtonElement>("button", {
+        id: "btSettings",
+        type: "button",
+        innerText: "Settings",
+        className: "btNavigate",
+    });
+    btSettings.addEventListener("click", () => {
+        View.Settings(eSettingsPage.Main);
+    });
 }
 
 function mkSearch(route: Route) {
