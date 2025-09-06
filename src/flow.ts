@@ -317,7 +317,7 @@ export class Route {
         }
     }
 
-    public static LaunchHome(){
+    public static LaunchHome() {
         Route._launch();
     }
     public static Launch(page: string, path?: { [key: string]: string }) {
@@ -327,9 +327,9 @@ export class Route {
     }
     static _launch(page?: string, path?: { [key: string]: string }) {
         path ??= {};
-        if(page) path['page'] = page;
-        this.updateUrl(path);
-        Route.OnNavigate();
+        if (page) path['page'] = page;
+        if (Route.updateUrl(path))
+            Route.OnNavigate();
     }
 
     public static GetUniqPage(): string { return window.location.search; }
@@ -355,7 +355,7 @@ export class Route {
 
     public static ErrorFallback() {
         console.trace(`falling back to default route from URL ${window.location.search} `);
-        this.updateUrl({});
+        Route.updateUrl({});
         Flow.Dirty();
     }
 
@@ -375,14 +375,19 @@ export class Route {
 
 
 
-    static updateUrl(path: { [key: string]: string }) {
+    static updateUrl(path: { [key: string]: string }): boolean {
         const url = new URL(window.location.href);
         const params = new URLSearchParams();
+        const oldParams = new URLSearchParams(window.location.search);
         for (const [key, value] of Object.entries(path)) {
             params.set(key, value);
         }
-        url.search = params.toString();
+        let target = params.toString();
+        if (oldParams.toString() == target)
+            return false;
+        url.search = target;
         history.pushState(null, '', url.toString());
+        return true;
     }
 
     static parseUrl(): { [key: string]: string } {
