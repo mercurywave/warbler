@@ -59,7 +59,13 @@ export class Flow {
     }
 
     public static Cleanup() {
-        __allFlows = __allFlows.filter(r => r._isConnected);
+        let toRemove = __allFlows.filter(r => !r._isConnected);
+        for (const route of toRemove) {
+            for (const clean of route._cleanupActions) {
+                clean();
+            }
+        }
+        __allFlows = __allFlows.filter(r => !toRemove.includes(r));
     }
 
     private _ancestor: Flow | null;
@@ -67,6 +73,7 @@ export class Flow {
     public _boundValue: any;
     public _root: HTMLElement | Nil = null;
     private _actions: (() => void)[] = [];
+    private _cleanupActions: (() => void)[] = [];
     private _arrays: BoundList<any>[] = [];
 
     constructor(ancestor: Flow | null, root: HTMLElement | Nil, boundValue?: any) {
@@ -196,6 +203,11 @@ export class Flow {
                 Route.Render(flow);
             }
         });
+    }
+
+    public unwind(handler: () => void) {
+        // calls handler when this router is destroyed
+        this._cleanupActions.push(handler);
     }
 
     public get _isConnected(): boolean { return this._root?.isConnected ?? false };

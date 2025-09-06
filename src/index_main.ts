@@ -3,6 +3,7 @@ import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
 import { mkSettings } from "./index_settings";
 import { Note } from "./note";
+import { Speech } from "./speech";
 import { util } from "./util";
 import { eView, View, ViewData } from "./view";
 
@@ -67,17 +68,6 @@ Route.Register("folder", (flow, pars) => {
 });
 
 
-function mkMainPane(flow: Flow, view: ViewData) {
-    flow.root("div", { id: "notesMain" });
-    if (view.type === eView.Settings) {
-        mkSettings(flow, "main");
-    }
-    else {
-        let bind = flow.bindArray(() => view.notes, mkNoteControl);
-        bind.setAnimRemoval(200, "fade-out");
-    }
-}
-
 function mkNoteControl(flow: Flow, note: Note) {
     let root = flow.root("div", { className: "bubble" });
     flow.conditionalStyle(root, "childNote", () => note.isChild);
@@ -104,6 +94,7 @@ function mkNoteControl(flow: Flow, note: Note) {
 }
 
 function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
+    Speech.mkRecordButton(flow, span, note);
     let btAdd = flow.elem<HTMLButtonElement>(span, "button", {
         type: "button",
         innerText: "+ Sub Note",
