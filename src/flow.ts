@@ -1,50 +1,53 @@
 import { Nil } from "./util";
 
-let __tree: Route;
-let __allRoutes: Route[] = [];
+let __tree: Flow;
+let __allFlows: Flow[] = [];
 let __scheduled: boolean = false;
 
-export namespace Flow {
 
-    export function Init(root: HTMLElement, builder: (route: Route) => void): HTMLElement {
-        __allRoutes = [];
-        __tree = new Route(null, root);
+type ListOrBound<T> = T[] | (() => T[]);
+
+export class Flow {
+    
+    public static Init(root: HTMLElement, builder: (flow: Flow) => void): HTMLElement {
+        __allFlows = [];
+        __tree = new Flow(null, root);
         builder(__tree);
         if (!__tree._root) throw 'no document root';
-        Reflow();
+        Flow.Reflow();
         return __tree._root;
     }
 
-    export function Dirty() {
+    public static Dirty() {
         if (!__scheduled) {
             __scheduled = true;
             requestAnimationFrame(() => {
                 __scheduled = false;
-                Reflow();
+                Flow.Reflow();
             });
 
         }
     }
 
-    export function Reflow(from?: Route) {
+    public static Reflow(from?: Flow) {
         let index = 0;
 
-        let routes = [...__allRoutes];
+        let flows = [...__allFlows];
         if (from) {
-            routes = routes.filter(r => r.isDescendedFrom(from));
+            flows = flows.filter(r => r.isDescendedFrom(from));
         }
-        let processed: Route[] = [];
+        let processed: Flow[] = [];
         let more: boolean = true;
         while (more) {
             index++;
-            routes.sort((a, b) => a._depth - b._depth);
-            let checksum = __allRoutes.length;
-            for (const route of routes) {
-                route._flow();
-                processed.push(route);
+            flows.sort((a, b) => a._depth - b._depth);
+            let checksum = __allFlows.length;
+            for (const flow of flows) {
+                flow._flow();
+                processed.push(flow);
             }
-            more = __allRoutes.length > checksum; // more nodes added
-            routes = __allRoutes.filter(r => !processed.includes(r));
+            more = __allFlows.length > checksum; // more nodes added
+            flows = __allFlows.filter(r => !processed.includes(r));
 
             if (index > 9999) {
                 console.error("Flow.Reflow is probably in an infinite loop!");
@@ -52,31 +55,27 @@ export namespace Flow {
             }
         }
         setTimeout(() => {
-            Cleanup();
+            Flow.Cleanup();
         }, 0);
     }
 
-    export function Cleanup() {
-        __allRoutes = __allRoutes.filter(r => r._isConnected);
+    public static Cleanup() {
+        __allFlows = __allFlows.filter(r => r._isConnected);
     }
-}
 
-type ListOrBound<T> = T[] | (() => T[]);
-
-export class Route {
-    private _ancestor: Route | null;
+    private _ancestor: Flow | null;
     public _depth: number;
     public _boundValue: any;
     public _root: HTMLElement | Nil = null;
     private _actions: (() => void)[] = [];
     private _arrays: BoundList<any>[] = [];
 
-    constructor(ancestor: Route | null, root: HTMLElement | Nil, boundValue?: any) {
+    constructor(ancestor: Flow | null, root: HTMLElement | Nil, boundValue?: any) {
         this._ancestor = ancestor;
         this._root = root;
         this._depth = (ancestor?._depth ?? 0) + 1;
         this._boundValue = boundValue;
-        __allRoutes.push(this);
+        __allFlows.push(this);
     }
 
     public bind(action: () => void) {
@@ -122,7 +121,7 @@ export class Route {
         }
     }
 
-    public conditional(host: HTMLElement, ifRender: () => boolean, builder: (route: Route) => void) {
+    public conditional(host: HTMLElement, ifRender: () => boolean, builder: (flow: Flow) => void) {
         let state = { rendered: false };
         this.bind(() => {
             if (ifRender()) {
@@ -143,16 +142,16 @@ export class Route {
         });
     }
 
-    public bindCtl(builder: (route: Route) => void, parent?: HTMLElement) {
+    public bindCtl(builder: (flow: Flow) => void, parent?: HTMLElement) {
         if (!this._root) throw 'root not set';
-        let cRoute = new Route(this, parent);
-        builder(cRoute);
-        if (!cRoute._root) throw 'builder did not set an element';
-        if (!parent) this._root.appendChild(cRoute._root);
+        let cFlow = new Flow(this, parent);
+        builder(cFlow);
+        if (!cFlow._root) throw 'builder did not set an element';
+        if (!parent) this._root.appendChild(cFlow._root);
     }
 
     // bind to an object that might be swapped out, like a view
-    public bindObject<T>(getter: () => (T | null), handler: (route: Route, elem: T) => void, host?: HTMLElement | null): BoundList<T> {
+    public bindObject<T>(getter: () => (T | null), handler: (flow: Flow, elem: T) => void, host?: HTMLElement | null): BoundList<T> {
         return this.bindArray(() => {
             let obj = getter();
             if (obj) return [obj];
@@ -180,7 +179,7 @@ export class Route {
         });
     }
 
-    public bindArray<T>(list: ListOrBound<T>, handler: (route: Route, elem: T) => void, host?: HTMLElement | null): BoundList<T> {
+    public bindArray<T>(list: ListOrBound<T>, handler: (flow: Flow, elem: T) => void, host?: HTMLElement | null): BoundList<T> {
         if (!host) host = this._root;
         if (!host) throw 'could not seat array';
         let arr = new BoundList(this, host, list, handler);
@@ -200,24 +199,24 @@ export class Route {
         }
     }
 
-    public isDescendedFrom(route: Route): boolean {
-        if (this._ancestor == route) return true;
-        if (this._ancestor?.isDescendedFrom(route)) return true;
+    public isDescendedFrom(flow: Flow): boolean {
+        if (this._ancestor == flow) return true;
+        if (this._ancestor?.isDescendedFrom(flow)) return true;
         return false;
     }
 }
 
 export class BoundList<T> {
     private __list: ListOrBound<T>;
-    private __bound: Route[] = [];
-    private __parent: Route;
+    private __bound: Flow[] = [];
+    private __parent: Flow;
     private __container: HTMLElement
-    private __handler: (route: Route, elem: any) => void;
+    private __handler: (flow: Flow, elem: any) => void;
     private __delayMs: number = 0;
     private __deleteClass: string = "";
     private __delaySlide: number = 0;
 
-    public constructor(parent: Route, container: HTMLElement, list: ListOrBound<T>, handler: (route: Route, elem: any) => void) {
+    public constructor(parent: Flow, container: HTMLElement, list: ListOrBound<T>, handler: (flow: Flow, elem: any) => void) {
         this.__parent = parent;
         this.__container = container;
         this.__list = list;
@@ -230,19 +229,19 @@ export class BoundList<T> {
         if (this.isInSync()) return;
         let bound = [...this.__bound];
 
-        let goal: Route[] = [];
+        let goal: Flow[] = [];
         let children: HTMLElement[] = [];
         for (const o of this.getList()) {
-            let route = bound.find(r => r._boundValue === o);
-            if (route)
-                bound = bound.filter(r => r !== route);
+            let flow = bound.find(r => r._boundValue === o);
+            if (flow)
+                bound = bound.filter(r => r !== flow);
             else {
-                route = new Route(this.__parent, null, o);
-                this.__handler(route, o);
+                flow = new Flow(this.__parent, null, o);
+                this.__handler(flow, o);
             }
-            if (route._root) {
-                children.push(route._root);
-                goal.push(route);
+            if (flow._root) {
+                children.push(flow._root);
+                goal.push(flow);
             }
         }
         this.replaceChildrenPreserving(this.__container, children);
@@ -252,8 +251,8 @@ export class BoundList<T> {
         let goal = this.getList();
         if (goal.length != this.__bound.length) return false;
         for (let index = 0; index < this.__bound.length; index++) {
-            const route = this.__bound[index];
-            if (route._boundValue != goal[index]) return false;
+            const flow = this.__bound[index];
+            if (flow._boundValue != goal[index]) return false;
         }
         return true;
     }

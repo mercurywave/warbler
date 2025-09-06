@@ -1,5 +1,5 @@
 import { DB } from "./DB";
-import { Flow, Route } from "./flow";
+import { Flow } from "./flow";
 import { mkMain } from "./index_main";
 import { mkNavigation } from "./index_navigation";
 import { LoadSettings } from "./index_settings";
@@ -15,15 +15,15 @@ function initUi() {
     Flow.Init(main, mkRoot);
 }
 
-function mkRoot(route: Route) {
-    route.bindCtl(mkNavigation);
-    let main = route.child("div", { id: "main" });
+function mkRoot(flow: Flow) {
+    flow.bindCtl(mkNavigation);
+    let main = flow.child("div", { id: "main" });
     
-    let outer = route.elem(main, "div", { id: "mainOuter" });
-    let bind = route.bindObject(() => View.CurrView(), mkMain, outer);
+    let outer = flow.elem(main, "div", { id: "mainOuter" });
+    let bind = flow.bindObject(() => View.CurrView(), mkMain, outer);
     bind.setAnimRemoval(200, "fade-out-view");
 
-    let btAddNote = route.child<HTMLButtonElement>("button", {
+    let btAddNote = flow.child<HTMLButtonElement>("button", {
         type: "button",
         innerText: "+ Add Note",
         className: "btPrimary",

@@ -1,5 +1,5 @@
 import { DB } from "./DB";
-import { Flow, Route } from "./flow";
+import { Flow } from "./flow";
 import { Folder } from "./folder";
 import { mkSettings } from "./index_settings";
 import { Note } from "./note";
@@ -7,33 +7,33 @@ import { util } from "./util";
 import { eView, View, ViewData } from "./view";
 
 
-export function mkMain(route: Route, view: ViewData) {
-    route.root("div", { className: "mainInner" });
-    route.bindCtl(mkViewHeader);
-    let viewContainer = route.child("div", { className: "viewContainer" });
-    route.bindObject(() => View.CurrView(), mkMainPane, viewContainer);
-    route.child("div", { className: "scrollPad" })
+export function mkMain(flow: Flow, view: ViewData) {
+    flow.root("div", { className: "mainInner" });
+    flow.bindCtl(mkViewHeader);
+    let viewContainer = flow.child("div", { className: "viewContainer" });
+    flow.bindObject(() => View.CurrView(), mkMainPane, viewContainer);
+    flow.child("div", { className: "scrollPad" })
 }
 
-function mkViewHeader(route: Route) {
-    route.root("span", { className: "viewHeader" });
-    let prefix = route.child("span", { className: "prefix" });
-    route.bind(() => { prefix.innerText = View.CurrView().title; });
-    let edit = route.child("span");
-    route.conditional(edit, () => !!View.CurrView().folder, mkEditFolderName);
+function mkViewHeader(flow: Flow) {
+    flow.root("span", { className: "viewHeader" });
+    let prefix = flow.child("span", { className: "prefix" });
+    flow.bind(() => { prefix.innerText = View.CurrView().title; });
+    let edit = flow.child("span");
+    flow.conditional(edit, () => !!View.CurrView().folder, mkEditFolderName);
 }
 
-function mkEditFolderName(route: Route) {
+function mkEditFolderName(flow: Flow) {
     let folder = View.CurrView().folder;
     if (!folder) return; // ?
-    route.child("span", { innerText: ":" });
-    let input = route.child<HTMLInputElement>("input", {
+    flow.child("span", { innerText: ":" });
+    let input = flow.child<HTMLInputElement>("input", {
         className: "edFolder",
         type: "text",
         placeholder: "Unnamed Folder",
         autocomplete: "off",
     });
-    route.bind(() => {
+    flow.bind(() => {
         input.value = folder.title;
     });
     input.addEventListener("change", () => {
@@ -42,26 +42,26 @@ function mkEditFolderName(route: Route) {
     });
 }
 
-function mkMainPane(route: Route, view: ViewData) {
-    route.root("div", { id: "notesMain" });
+function mkMainPane(flow: Flow, view: ViewData) {
+    flow.root("div", { id: "notesMain" });
     if (view.type === eView.Settings) {
-        mkSettings(route, view.settings);
+        mkSettings(flow, view.settings);
     }
     else {
-        let bind = route.bindArray(() => view.currView, mkNoteControl);
+        let bind = flow.bindArray(() => view.currView, mkNoteControl);
         bind.setAnimRemoval(200, "fade-out");
     }
 }
 
-function mkNoteControl(route: Route, note: Note) {
-    let root = route.root("div", { className: "bubble" });
-    route.conditionalStyle(root, "childNote", () => note.isChild);
+function mkNoteControl(flow: Flow, note: Note) {
+    let root = flow.root("div", { className: "bubble" });
+    flow.conditionalStyle(root, "childNote", () => note.isChild);
 
-    let wrapper = route.child("div", { className: "growWrap" });
-    let edit = route.elem<HTMLTextAreaElement>(wrapper, "textarea");
+    let wrapper = flow.child("div", { className: "growWrap" });
+    let edit = flow.elem<HTMLTextAreaElement>(wrapper, "textarea");
     let updateSize = () => wrapper.dataset.replicatedValue = edit.value;
     edit.addEventListener("input", updateSize);
-    route.bind(() => {
+    flow.bind(() => {
         edit.value = note.text;
         updateSize();
     });
@@ -74,12 +74,12 @@ function mkNoteControl(route: Route, note: Note) {
     edit.addEventListener("focus", () => edit.spellcheck = true);
     edit.addEventListener("blur", () => edit.spellcheck = false);
 
-    let footer = route.child("div", { className: "bubbleFooter" });
-    mkNoteFooter(route, footer, note);
+    let footer = flow.child("div", { className: "bubbleFooter" });
+    mkNoteFooter(flow, footer, note);
 }
 
-function mkNoteFooter(route: Route, span: HTMLElement, note: Note) {
-    let btAdd = route.elem<HTMLButtonElement>(span, "button", {
+function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
+    let btAdd = flow.elem<HTMLButtonElement>(span, "button", {
         type: "button",
         innerText: "+ Sub Note",
         className: "btAddSubNote",
@@ -90,22 +90,22 @@ function mkNoteFooter(route: Route, span: HTMLElement, note: Note) {
         note.addChild(child);
         View.ForceAdd(child);
     });
-    route.conditionalStyle(btAdd, "noDisp", () => note.isChild);
-    mkNoteFolderPicker(route, span, note);
+    flow.conditionalStyle(btAdd, "noDisp", () => note.isChild);
+    mkNoteFolderPicker(flow, span, note);
 
-    route.elem(span, "span", {
+    flow.elem(span, "span", {
         className: "noteCreation",
         innerText: `created ${util.getRelativeTime(note.creationUtc)}`,
         title: `created ${note.creationUtc}`,
     });
 }
 
-function mkNoteFolderPicker(route: Route, span: HTMLElement, note: Note) {
-    route.conditionalStyle(span, "noDisp", () => note.isChild || DB.AllFolders().length < 1);
-    route.elem(span, "span", { innerText: "🗀" });
-    let dropDown = route.elem<HTMLSelectElement>(span, "select");
-    route.bindArray(() => DB.AllFolders(), mkFolderOption, dropDown);
-    route.bind(() => {
+function mkNoteFolderPicker(flow: Flow, span: HTMLElement, note: Note) {
+    flow.conditionalStyle(span, "noDisp", () => note.isChild || DB.AllFolders().length < 1);
+    flow.elem(span, "span", { innerText: "🗀" });
+    let dropDown = flow.elem<HTMLSelectElement>(span, "select");
+    flow.bindArray(() => DB.AllFolders(), mkFolderOption, dropDown);
+    flow.bind(() => {
         dropDown.value = note.folder?.id ?? "";
     });
     dropDown.addEventListener("change", () => {
@@ -114,9 +114,9 @@ function mkNoteFolderPicker(route: Route, span: HTMLElement, note: Note) {
     });
 }
 
-function mkFolderOption(route: Route, folder: Folder) {
-    let opt = route.root<HTMLOptionElement>("option");
-    route.bind(() => {
+function mkFolderOption(flow: Flow, folder: Folder) {
+    let opt = flow.root<HTMLOptionElement>("option");
+    flow.bind(() => {
         opt.text = folder.title;
     });
     opt.value = folder.id;
