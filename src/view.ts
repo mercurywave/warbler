@@ -11,7 +11,7 @@ export class ViewData {
     private _fullResults: Note[] = [];
     public folder: Folder | Nil = null;
     public tag: string | Nil = null;
-    public title: string = "???";
+    public title: string = "";
     public isChron: boolean = false; // chronologically ordered
 
     public constructor(type: eView) {
