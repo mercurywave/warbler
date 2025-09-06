@@ -95,6 +95,7 @@ function mkNoteControl(flow: Flow, note: Note) {
 
 function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
     Speech.mkRecordButton(flow, span, note);
+
     let btAdd = flow.elem<HTMLButtonElement>(span, "button", {
         type: "button",
         innerText: "+ Sub Note",
@@ -106,8 +107,8 @@ function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
         note.addChild(child);
         View.ForceAdd(child);
     });
-    flow.conditionalStyle(btAdd, "noDisp", () => note.isChild);
     mkNoteFolderPicker(flow, span, note);
+    flow.conditionalStyle(btAdd, "noDisp", () => note.isChild);
 
     flow.elem(span, "span", {
         className: "noteCreation",
@@ -117,9 +118,10 @@ function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
 }
 
 function mkNoteFolderPicker(flow: Flow, span: HTMLElement, note: Note) {
-    flow.conditionalStyle(span, "noDisp", () => note.isChild || DB.AllFolders().length < 1);
-    flow.elem(span, "span", { innerText: "🗀" });
-    let dropDown = flow.elem<HTMLSelectElement>(span, "select");
+    let subSpan = flow.elem(span, "span");
+    flow.conditionalStyle(subSpan, "noDisp", () => note.isChild);
+    flow.elem(subSpan, "span", { innerText: "🗀" });
+    let dropDown = flow.elem<HTMLSelectElement>(subSpan, "select");
     flow.bindArray(() => DB.AllFolders(), mkFolderOption, dropDown);
     flow.bind(() => {
         dropDown.value = note.folder?.id ?? "";
