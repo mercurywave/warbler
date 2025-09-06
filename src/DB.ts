@@ -134,4 +134,7 @@ export namespace DB {
     export function GetNoteById(id: string): Note | Nil {
         return _notes.find(n => n.id === id);
     }
+    export function GetFolderById(id: string): Folder | Nil {
+        return _folders.find(n => n.id === id);
+    }
 }

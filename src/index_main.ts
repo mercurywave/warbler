@@ -1,5 +1,5 @@
 import { DB } from "./DB";
-import { Flow } from "./flow";
+import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
 import { mkSettings } from "./index_settings";
 import { Note } from "./note";
@@ -11,7 +11,8 @@ export function mkMain(flow: Flow, view: ViewData) {
     flow.root("div", { className: "mainInner" });
     flow.bindCtl(mkViewHeader);
     let viewContainer = flow.child("div", { className: "viewContainer" });
-    flow.bindObject(() => View.CurrView(), mkMainPane, viewContainer);
+    //flow.bindObject(() => View.CurrView(), mkMainPane, viewContainer);
+    flow.routePage(viewContainer);
     flow.child("div", { className: "scrollPad" })
 }
 
@@ -42,13 +43,37 @@ function mkEditFolderName(flow: Flow) {
     });
 }
 
+function rendNotesList(flow: Flow) {
+    let bind = flow.bindArray(() => View.CurrView().notes, mkNoteControl);
+    bind.setAnimRemoval(200, "fade-out");
+}
+
+Route.Register("all", (flow) => {
+    rendNotesList(flow);
+}, () => View.ShowAll(), true);
+
+Route.Register("unsorted", (flow) => {
+    rendNotesList(flow);
+}, () => View.Unsorted());
+
+Route.Register("folder", (flow, pars) => {
+    rendNotesList(flow);
+}, pars => {
+    let folder = DB.GetFolderById(pars["id"]);
+    if (!folder) Route.ErrorFallback();
+    else {
+        View.Folder(folder);
+    }
+});
+
+
 function mkMainPane(flow: Flow, view: ViewData) {
     flow.root("div", { id: "notesMain" });
     if (view.type === eView.Settings) {
-        mkSettings(flow, view.settings);
+        mkSettings(flow, "main");
     }
     else {
-        let bind = flow.bindArray(() => view.currView, mkNoteControl);
+        let bind = flow.bindArray(() => view.notes, mkNoteControl);
         bind.setAnimRemoval(200, "fade-out");
     }
 }

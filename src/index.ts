@@ -1,13 +1,13 @@
 import { DB } from "./DB";
-import { Flow } from "./flow";
+import { Flow, Route } from "./flow";
 import { mkMain } from "./index_main";
 import { mkNavigation } from "./index_navigation";
 import { LoadSettings } from "./index_settings";
 import { View } from "./view";
 
 document.addEventListener("DOMContentLoaded", () => {
-    initUi();
     setup();
+    initUi();
 });
 
 function initUi() {
@@ -38,6 +38,6 @@ function mkRoot(flow: Flow) {
 async function setup(): Promise<void> {
     LoadSettings();
     await DB.Init();
-    View.ShowAll();
-    Flow.Dirty();
+    Route.OnNavigate();
 }
+window.addEventListener('popstate', () => Route.OnNavigate());

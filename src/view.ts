@@ -7,7 +7,7 @@ import { Nil } from "./util";
 export class ViewData {
     public type: eView;
     public settings: eSettingsPage = eSettingsPage.None;
-    public currView: Note[] = [];
+    public notes: Note[] = [];
     private _fullResults: Note[] = [];
     public folder: Folder | Nil = null;
     public tag: string | Nil = null;
@@ -18,7 +18,7 @@ export class ViewData {
         this.type = type;
     }
 
-    public get more(): number { return this._fullResults.length - this.currView.length; }
+    public get more(): number { return this._fullResults.length - this.notes.length; }
 
     // will automatically include children notes along side the main note
     public setChronResults(notes: Note[]) {
@@ -26,23 +26,23 @@ export class ViewData {
         notes = notes.map(n => n.getChildNoteCluster()).flat();
         this.isChron = true;
         this._fullResults = notes;
-        this.currView = notes; // TODO: truncate
+        this.notes = notes; // TODO: truncate
     }
     public forceAdd(note: Note): boolean {
-        if (this.currView.includes(note)) return false; // already added
+        if (this.notes.includes(note)) return false; // already added
         if (this.isChron) {
             if (note.isChild) {
-                let parentIdx = this.currView.findIndex(n => n === note.parent);
+                let parentIdx = this.notes.findIndex(n => n === note.parent);
                 if (parentIdx >= 0) {
-                    let nextIdx = this.currView.findIndex((n, i) => i > parentIdx && n.parent !== note.parent);
+                    let nextIdx = this.notes.findIndex((n, i) => i > parentIdx && n.parent !== note.parent);
                     if (nextIdx >= 0)
-                        this.currView.splice(nextIdx, 0, note);
+                        this.notes.splice(nextIdx, 0, note);
                 }
             }
         }
         // fallback for a bunch of cases is to just add to the end
-        if (!this.currView.includes(note)) {
-            this.currView.push(note);
+        if (!this.notes.includes(note)) {
+            this.notes.push(note);
         }
         return true;
     }
@@ -98,8 +98,7 @@ export namespace View {
         finalize();
     }
 
-    export function Settings(page: eSettingsPage)
-    {
+    export function Settings(page: eSettingsPage) {
         reset(eView.Settings);
         _data.settings = page;
         _data.title = "Settings";

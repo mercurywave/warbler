@@ -1,6 +1,6 @@
-import { Flow } from "./flow";
+import { Flow, Route } from "./flow";
 import { Nil } from "./util";
-import { eSettingsPage } from "./view";
+import { eSettingsPage, View } from "./view";
 
 export interface ISettings {
     v: number;
@@ -26,14 +26,19 @@ function SaveSettings() {
     Flow.Dirty();
 }
 
+Route.Register("settings", (flow, pars) => {
+    mkSettings(flow, pars["sub"]);
+}, pars => View.Settings(parseSettings(pars["sub"])));
 
-
-export function mkSettings(flow: Flow, page: eSettingsPage) {
-    switch (page) {
-        case eSettingsPage.Main:
+function parseSettings(subPage: string): eSettingsPage {
+    if (subPage?.toLowerCase() === "main") return eSettingsPage.Main;
+    return eSettingsPage.None;
+}
+export function mkSettings(flow: Flow, subPage: string) {
+    switch (parseSettings) {
+        default: // main
             mkMain(flow);
             break;
-        default: break;
     }
 }
 
@@ -53,8 +58,8 @@ function mkTranscriptMode(flow: Flow) {
         ["", "Disabled"],
         ["WhisperDock", "WhisperDock"],
     ];
-    boundDropDown(flow, opts, 
-        () => _config.transcriptType ?? "", 
+    boundDropDown(flow, opts,
+        () => _config.transcriptType ?? "",
         v => _config.transcriptType = v,
     );
 }

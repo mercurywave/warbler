@@ -8,7 +8,7 @@ let __scheduled: boolean = false;
 type ListOrBound<T> = T[] | (() => T[]);
 
 export class Flow {
-    
+
     public static Init(root: HTMLElement, builder: (flow: Flow) => void): HTMLElement {
         __allFlows = [];
         __tree = new Flow(null, root);
@@ -25,7 +25,6 @@ export class Flow {
                 __scheduled = false;
                 Flow.Reflow();
             });
-
         }
     }
 
@@ -100,7 +99,7 @@ export class Flow {
 
     public elem<T extends HTMLElement>(parent: HTMLElement | Nil, elemName: keyof HTMLElementTagNameMap, props?: Partial<T>): T {
         if (!parent) parent = this._root;
-        if(!parent) throw 'could not place elem';
+        if (!parent) throw 'could not place elem';
         let elem = document.createElement(elemName) as T;
         this._applyProps(elem, props);
         parent.appendChild(elem);
@@ -186,6 +185,17 @@ export class Flow {
         this._arrays.push(arr);
         arr.sync();
         return arr;
+    }
+
+    public routePage(host: HTMLElement | null) {
+        let state: string | Nil = null;
+        this.bind(() => {
+            if (Route.GetUniqPage() != state) {
+                state = Route.GetUniqPage();
+                let flow = new Flow(this, host);
+                Route.Render(flow);
+            }
+        });
     }
 
     public get _isConnected(): boolean { return this._root?.isConnected ?? false };
@@ -288,4 +298,100 @@ export class BoundList<T> {
             }
         });
     }
+}
+
+// acts as a virtual page storing state in the URL
+// you can only have one "page" at a time, with arbitrary optional sub-keys
+// the key 'page' is used for main navigation
+let __allRoutes: { [page: string]: Route } = {};
+let __defaultRoute: Route;
+type RouteHandler = (flow: Flow, path: { [key: string]: string }) => void;
+type OnNavigateHandler = (path: { [key: string]: string }) => void;
+export class Route {
+    public static Register(page: string, handler: RouteHandler, onNavigate?: OnNavigateHandler, dflt?: boolean) {
+        let route = new Route(page, handler, onNavigate);
+        __allRoutes[page] = route;
+        if (dflt) {
+            if (__defaultRoute) throw 'double default register';
+            __defaultRoute = route;
+        }
+    }
+
+    public static LaunchHome(){
+        Route._launch();
+    }
+    public static Launch(page: string, path?: { [key: string]: string }) {
+        let route = __allRoutes[page];
+        if (!route) throw `page does not exist ${page}`;
+        Route._launch(page, path);
+    }
+    static _launch(page?: string, path?: { [key: string]: string }) {
+        path ??= {};
+        if(page) path['page'] = page;
+        this.updateUrl(path);
+        Route.OnNavigate();
+    }
+
+    public static GetUniqPage(): string { return window.location.search; }
+
+    static getCurrRoute(): [Route, path: { [key: string]: string }] {
+        let path = this.parseUrl();
+        let page = path["page"];
+        let route = __allRoutes[page] ?? __defaultRoute;
+        if (!route) throw 'default route not set';
+        return [route, path];
+    }
+
+    public static OnNavigate() {
+        let [route, path] = Route.getCurrRoute();
+        if (route._onNavigate) route._onNavigate(path);
+        Flow.Dirty();
+    }
+
+    public static Render(flow: Flow) {
+        let [route, path] = Route.getCurrRoute();
+        route.render(flow, path);
+    }
+
+    public static ErrorFallback() {
+        console.trace(`falling back to default route from URL ${window.location.search} `);
+        this.updateUrl({});
+        Flow.Dirty();
+    }
+
+
+    private _page: string;
+    private _handler: RouteHandler;
+    private _onNavigate?: OnNavigateHandler | Nil;
+
+    constructor(page: string, handler: RouteHandler, onNavigate?: OnNavigateHandler) {
+        this._page = page;
+        this._handler = handler;
+        this._onNavigate = onNavigate;
+    }
+    render(flow: Flow, path: { [key: string]: string }) {
+        this._handler(flow, path);
+    }
+
+
+
+    static updateUrl(path: { [key: string]: string }) {
+        const url = new URL(window.location.href);
+        const params = new URLSearchParams();
+        for (const [key, value] of Object.entries(path)) {
+            params.set(key, value);
+        }
+        url.search = params.toString();
+        history.pushState(null, '', url.toString());
+    }
+
+    static parseUrl(): { [key: string]: string } {
+        const params = new URLSearchParams(window.location.search);
+        const path: { [key: string]: string } = {};
+        params.forEach((value, key) => {
+            path[key] = value;
+        });
+        return path;
+    }
+
 }

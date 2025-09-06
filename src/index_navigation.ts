@@ -1,5 +1,5 @@
 import { DB } from "./DB";
-import { Flow } from "./flow";
+import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
 import { eSettingsPage, View } from "./view";
 
@@ -14,7 +14,7 @@ export function mkNavigation(flow: Flow) {
         className: "btNavigate",
     });
     btAll.addEventListener("click", () => {
-        View.ShowAll();
+        Route.LaunchHome();
     });
     let btUnsorted = flow.child<HTMLButtonElement>("button", {
         type: "button",
@@ -25,7 +25,7 @@ export function mkNavigation(flow: Flow) {
         btUnsorted.innerText = 'Unsorted' + (cnt > 0 ? ` (${cnt})` : '');
     });
     btUnsorted.addEventListener("click", () => {
-        View.Unsorted();
+        Route.Launch("unsorted");
     });
     flow.bindCtl(mkFolderList);
     let btSettings = flow.child<HTMLButtonElement>("button", {
@@ -35,7 +35,7 @@ export function mkNavigation(flow: Flow) {
         className: "btNavigate",
     });
     btSettings.addEventListener("click", () => {
-        View.Settings(eSettingsPage.Main);
+        Route.Launch("settings");
     });
 }
 
@@ -86,7 +86,7 @@ function mkFolder(flow: Flow, folder: Folder) {
     });
     input.addEventListener("click", () => {
         if (View.CurrView().folder !== folder) {
-            View.Folder(folder);
+            Route.Launch("folder", { id: folder.id });
         }
     });
 }
