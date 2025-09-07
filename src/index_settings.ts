@@ -7,7 +7,6 @@ export interface ISettings {
     transcriptType?: string | Nil;
     transcriptUrl?: string | Nil;
 }
-export type sTranscriptType = "WhisperDock" | Nil;
 
 let _config: ISettings;
 export function Config(): ISettings { return _config; }
@@ -56,6 +55,7 @@ function mkTranscriptMode(flow: Flow) {
     lbl(flow, "Transcription Service:");
     let opts: Option[] = [
         ["", "Disabled"],
+        ["WhisperAsr", "Whisper-ASR (TESTING)"],
         ["WhisperDock", "WhisperDock (NON-FUNCTIONAL)"],
     ];
     boundDropDown(flow, opts,

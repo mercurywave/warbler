@@ -33,6 +33,9 @@ export namespace Speech {
             case 'WhisperDock':
                 addition = await runWhisperDock(blob);
                 break;
+            case 'WhisperAsr':
+                addition = await runWhisperAsr(blob);
+                break;
             default: throw 'audio type not implemented'
         }
 
@@ -47,6 +50,35 @@ export namespace Speech {
         let url = Config().transcriptUrl;
         if (!url) return null;
         return url;
+    }
+}
+
+async function runWhisperAsr(blob: Blob): Promise<string> {
+    console.log("audio recorded");
+    let baseUrl = Speech.audioUrl();
+    if (!baseUrl) throw 'URL is required for WhisperAsr';
+    let url = new URL(baseUrl);
+    url.pathname += '/asr?output=json';
+    try {
+        const formData = new FormData();
+        formData.append('audio_file', blob, 'recorded_audio.wav');
+
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            console.log('Response from backend:', result);
+            return result;
+        } else {
+            console.error('Failed to send audio:', response.status, response.statusText);
+            return '';
+        }
+    } catch (error) {
+        console.error('Error sending audio:', error);
+        return '';
     }
 }
 
