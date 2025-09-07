@@ -26,8 +26,16 @@ export namespace Speech {
         flow.conditionalStyle(btAdd, "noDisp", () => !audioType());
     }
 
-    function tryProcessAudio(blob: Blob, flow: Flow, note: Note) {
+    async function tryProcessAudio(blob: Blob, flow: Flow, note: Note) {
         console.log("audio recorded");
+        let addition = '';
+        switch (audioType()) {
+            case 'WhisperDock':
+                addition = await runWhisperDock(blob);
+                break;
+            default: throw 'audio type not implemented'
+        }
+
     }
 
     export function audioType(): string | Nil {
@@ -39,6 +47,35 @@ export namespace Speech {
         let url = Config().transcriptUrl;
         if (!url) return null;
         return url;
+    }
+}
+
+async function runWhisperDock(blob: Blob): Promise<string> {
+    console.log("audio recorded");
+    let baseUrl = Speech.audioUrl();
+    if (!baseUrl) throw 'URL is required for WhisperDock';
+    let url = new URL(baseUrl);
+    url.pathname += '/transcribe';
+    try {
+        const formData = new FormData();
+        formData.append('file', blob, 'recorded_audio.wav');
+
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            console.log('Response from backend:', result);
+            return result;
+        } else {
+            console.error('Failed to send audio:', response.status, response.statusText);
+            return '';
+        }
+    } catch (error) {
+        console.error('Error sending audio:', error);
+        return '';
     }
 }
 

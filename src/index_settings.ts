@@ -56,7 +56,7 @@ function mkTranscriptMode(flow: Flow) {
     lbl(flow, "Transcription Service:");
     let opts: Option[] = [
         ["", "Disabled"],
-        ["WhisperDock", "WhisperDock"],
+        ["WhisperDock", "WhisperDock (NON-FUNCTIONAL)"],
     ];
     boundDropDown(flow, opts,
         () => _config.transcriptType ?? "",
