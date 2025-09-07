@@ -51,16 +51,35 @@ function mkTranscription(flow: Flow) {
     flow.conditional(url, () => !!_config.transcriptType, mkTranscriptUrl);
 }
 
+interface IAudioService{
+    name: string;
+    key?: string;
+    description?: string;
+}
+
+let _audioPipelines: IAudioService[] = [
+    { name: "Disabled" },
+    { 
+        name: "Whisper-ASR",
+        key: "WhisperAsr",
+        description: `
+            Whisper-ASR you to point to an <a href="https://github.com/ahmetoner/whisper-asr-webservice">
+            openai-whisper-asr-webservice</a> end point. NOTE: With a default 
+            <a href="https://hub.docker.com/r/onerahmet/openai-whisper-asr-webservice">Docker install</a>,
+            locally, you will likely need a reverse proxy to override the CORS headers, as this is invoked
+            from the front end. The URL should be the base URL, and the /asr will be appeneded automatically.
+        `.trim(),
+     },
+];
+
 function mkTranscriptMode(flow: Flow) {
     lbl(flow, "Transcription Service:");
-    let opts: Option[] = [
-        ["", "Disabled"],
-        ["WhisperAsr", "Whisper-ASR"],
-    ];
+    let opts: Option[] = _audioPipelines.map(svc => [svc.key ?? "", svc.name]);
     boundDropDown(flow, opts,
         () => _config.transcriptType ?? "",
         v => _config.transcriptType = v,
     );
+    boundDescription(flow, () => _audioPipelines.find(a => a.key == _config.transcriptType)?.description);
 }
 
 function mkTranscriptUrl(flow: Flow) {
@@ -113,4 +132,10 @@ function addSection(flow: Flow, label: string, builder: (flow: Flow) => void) {
     flow.child("div", { innerText: label, className: "settingHead" });
     let section = flow.child("div", { className: "section" });
     flow.bindCtl(builder, section);
+}
+
+function boundDescription(flow: Flow, getter: () => (string | Nil), parent?: HTMLElement){
+    let container = flow.elem(parent, "div", { className: "settingDescription" });
+    flow.bind(() => container.innerHTML = getter() ?? "");
+    flow.conditionalStyle(container, "noDisp", () => getter() == "");
 }

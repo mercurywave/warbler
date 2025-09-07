@@ -422,3 +422,16 @@ body {
     margin-top: 15px;
     margin-bottom: 4px;
 }
+
+.settingDescription{
+    font-size: smaller;
+    color: #869aa8;
+    margin: 10px 0;
+}
+
+a {
+    color: #c5a4f2;
+}
+a:visited {
+    color: #7852ad;
+}
