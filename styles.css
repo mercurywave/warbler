@@ -325,6 +325,9 @@ body {
 .btRecord.recording{
     outline: 2px solid #f03400;
 }
+.btRecord.processing{
+    outline: 2px solid #0078f0;
+}
 
 .btAddSubNote:hover{
     outline: 1px solid #586169;

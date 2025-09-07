@@ -11,6 +11,11 @@ export namespace util {
         return text;
     }
 
+    export function appendPiece(text:string, delim:string, append:string): string{
+        if(text == "") return append;
+        return text + delim + append;
+    }
+
     export function deepCopy(obj: any): any {
         return JSON.parse(JSON.stringify(obj));
     }

@@ -1,7 +1,7 @@
 import { Flow } from "./flow";
 import { Config } from "./index_settings";
 import { Note } from "./note";
-import { Deferred, Nil } from "./util";
+import { Deferred, Nil, util } from "./util";
 
 export namespace Speech {
     export function mkRecordButton(flow: Flow, span: HTMLElement, note: Note) {
@@ -11,7 +11,11 @@ export namespace Speech {
             className: "btRecord",
         });
         let listen: Listener = new Listener();
-        listen.then(b => tryProcessAudio(b, flow, note));
+        listen.then(b => {
+            btAdd.classList.add("processing");
+            tryProcessAudio(b, flow, note)
+                .finally(() => btAdd.classList.remove("processing"));
+        });
         listen.begin(() => btAdd.classList.add("recording"));
         listen.finally(() => btAdd.classList.remove("recording"));
         btAdd.addEventListener("click", () => {
@@ -38,7 +42,10 @@ export namespace Speech {
                 break;
             default: throw 'audio type not implemented'
         }
-
+        if(addition != ""){
+            note.text = util.appendPiece(note.text, '\n', addition);
+            Flow.Dirty();
+        }
     }
 
     export function audioType(): string | Nil {
@@ -54,11 +61,11 @@ export namespace Speech {
 }
 
 async function runWhisperAsr(blob: Blob): Promise<string> {
-    console.log("audio recorded");
     let baseUrl = Speech.audioUrl();
     if (!baseUrl) throw 'URL is required for WhisperAsr';
     let url = new URL(baseUrl);
-    url.pathname += '/asr?output=json';
+    url.pathname += '/asr';
+    url.search = 'output=json';
     try {
         const formData = new FormData();
         formData.append('audio_file', blob, 'recorded_audio.wav');
@@ -71,7 +78,7 @@ async function runWhisperAsr(blob: Blob): Promise<string> {
         if (response.ok) {
             const result = await response.json();
             console.log('Response from backend:', result);
-            return result;
+            return result.segments.map((s:any) => s.text.trim()).join('\n');
         } else {
             console.error('Failed to send audio:', response.status, response.statusText);
             return '';
