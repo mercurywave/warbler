@@ -463,3 +463,9 @@ a {
 a:visited {
     color: #7852ad;
 }
+
+.setErr{
+    color: rgb(188, 40, 40);
+    font-weight: 500;
+    font-size: smaller;
+}

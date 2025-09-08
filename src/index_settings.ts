@@ -1,3 +1,4 @@
+import { AILinkage } from "./ai_link";
 import { Flow, Route } from "./flow";
 import { Nil } from "./util";
 import { eSettingsPage, View } from "./view";
@@ -58,7 +59,6 @@ function CleanSettings() {
     _config.llmServers = _config.llmServers.filter(s => _llmPipelines.find(p => p.key === s.type));
 
     // force-create servers if something gets unlinked
-    console.log([..._config.llmServers]);
     for (const aiFunc of loopConfigedAiFunctions()) {
         if (aiFunc.serverKey && !_config.llmServers.find(s => s.id === aiFunc.serverKey)) {
             _config.llmServers.push({ id: aiFunc.serverKey, type: _llmPipelines[0].key ?? "", alias: "???" });
@@ -194,6 +194,18 @@ function mkLlmLine(flow: Flow, server: ILlmServer) {
     });
     flow.bind(() => {
         btRemove.disabled = !!loopConfigedAiFunctions().find(c => c.serverKey === server.id);
+    });
+
+    let bttest = flow.child<HTMLButtonElement>("button", {
+        type: "button",
+        innerText: "Test",
+    });
+    let lblResult = flow.child("span");
+    bttest.addEventListener("click", async () => {
+        let ai = new AILinkage(server);
+        let [succes, msg] = await ai.TestConnection();
+        lblResult.innerText = msg;
+        lblResult.classList.toggle("setErr", !succes);
     });
 }
 function getServerName(server: ILlmServer): string {
