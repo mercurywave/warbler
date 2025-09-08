@@ -412,6 +412,8 @@ body {
     font-weight: 600;
     font-size: larger;
     margin-left: 5px;
+    margin-top: 25px;
+    margin-bottom: 5px;
 }
 
 .section{
@@ -419,8 +421,30 @@ body {
 }
 
 .lblSet{
-    margin-top: 15px;
+    margin-top: 10px;
     margin-bottom: 4px;
+}
+
+.liSetServers{
+    padding: 10px 0;
+}
+.setServer{
+    outline: 1px solid #3C4A56;
+    padding: 5px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+.setServer select{
+    width: 140px;
+}
+.setServer label{
+    display: flex;
+    flex-direction: row;
+    margin: 0 10px;
+}
+.setServer input{
+    margin-left: 5px;
 }
 
 .settingDescription{
