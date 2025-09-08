@@ -419,6 +419,9 @@ body {
 .section{
     margin-left: 5px;
 }
+.section select{
+    width: 140px;;
+}
 
 .lblSet{
     margin-top: 10px;
@@ -435,9 +438,6 @@ body {
     flex-direction: row;
     flex-wrap: wrap;
 }
-.setServer select{
-    width: 140px;
-}
 .setServer label{
     display: flex;
     flex-direction: row;
@@ -445,6 +445,10 @@ body {
 }
 .setServer input{
     margin-left: 5px;
+}
+.edSetTextArea{
+    width: 400px;
+    height: 150px;
 }
 
 .settingDescription{

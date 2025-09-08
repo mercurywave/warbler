@@ -7,12 +7,22 @@ export interface ISettings {
     transcriptType?: string | Nil;
     transcriptUrl?: string | Nil;
     llmServers: ILlmServer[];
+
+    summaryAi: IAIFunction;
+    cleanAudioAi: IAIFunction;
 }
 
 export interface ILlmServer {
+    id: string;
     type: string;
     url?: string;
     alias?: string;
+}
+
+export interface IAIFunction {
+    serverKey?: string;
+    model?: string;
+    systemPrompt?: string;
 }
 
 interface IService {
@@ -24,6 +34,9 @@ type Option = [value: string, display: string];
 
 function serverToOption(svc: IService): Option {
     return [svc.key ?? "", svc.name];
+}
+function loopConfigedAiFunctions(): IAIFunction[] {
+    return [_config.summaryAi, _config.summaryAi];
 }
 
 let _config: ISettings;
@@ -38,14 +51,26 @@ export function LoadSettings() {
 }
 function CleanSettings() {
     if (!_config.llmServers) _config.llmServers = []; // TODO: remove backwards compatability break
+    if (!_config.summaryAi) _config.summaryAi = {};
+    if (!_config.cleanAudioAi) _config.cleanAudioAi = {};
 
     // ignore invalid options
     _config.llmServers = _config.llmServers.filter(s => _llmPipelines.find(p => p.key === s.type));
+
+    // force-create servers if something gets unlinked
+    console.log([..._config.llmServers]);
+    for (const aiFunc of loopConfigedAiFunctions()) {
+        if (aiFunc.serverKey && !_config.llmServers.find(s => s.id === aiFunc.serverKey)) {
+            _config.llmServers.push({ id: aiFunc.serverKey, type: _llmPipelines[0].key ?? "", alias: "???" });
+        }
+    }
 }
 function ResetSettings() {
     _config = {
         v: 1,
         llmServers: [],
+        summaryAi: {},
+        cleanAudioAi: {},
     };
 }
 function SaveSettings() {
@@ -72,6 +97,10 @@ export function mkSettings(flow: Flow, subPage: string) {
 function mkMain(flow: Flow) {
     addSection(flow, "Transcription", mkTranscription);
     addSection(flow, "LLM Servers", mkLlmServers);
+    let aiContainer = flow.child("div");
+    addSection(flow, "AI Summary", f => mkAiConfig(f, _config.summaryAi), aiContainer);
+    addSection(flow, "AI Transcribe Filter", f => mkAiConfig(f, _config.cleanAudioAi), aiContainer);
+    flow.conditionalStyle(aiContainer, "noDisp", () => _config.llmServers.length < 1);
 }
 
 function mkTranscription(flow: Flow) {
@@ -98,7 +127,7 @@ let _audioPipelines: IService[] = [
 function mkTranscriptMode(flow: Flow) {
     lbl(flow, "Transcription Service:");
     let opts: Option[] = _audioPipelines.map(serverToOption);
-    boundDropDown(flow, opts,
+    addDropDown(flow, opts,
         () => _config.transcriptType ?? "",
         v => _config.transcriptType = v,
     );
@@ -120,10 +149,11 @@ function mkLlmServers(flow: Flow) {
         className: "btSetting",
     });
     btAddServer.addEventListener("click", () => {
-        _config.llmServers.push({ type: _llmPipelines[0].key ?? "", url: "" });
+        let id = crypto.randomUUID();
+        _config.llmServers.push({ id: id, type: _llmPipelines[0].key ?? "", url: "" });
         Flow.Dirty();
     });
-    let elList = flow.child("div", {className: "liSetServers" });
+    let elList = flow.child("div", { className: "liSetServers" });
     flow.bindArray(() => _config.llmServers, mkLlmLine, elList);
 }
 
@@ -140,16 +170,17 @@ let _llmPipelines: IService[] = [
 function mkLlmLine(flow: Flow, server: ILlmServer) {
     let span = flow.root("div", { className: "setServer" });
     let opts: Option[] = _llmPipelines.map(serverToOption);
-    boundDropDown(flow, opts,
+    addDropDown(flow, opts,
         () => server.type ?? "",
         v => server.type = v,
     );
 
-    let lblUrl = flow.child("label", {innerText: " URL: "});
+    let lblUrl = flow.child("label", { innerText: " URL: " });
     boundTextInput(flow, () => server.url ?? "", v => server.url = v, lblUrl);
 
-    let lblAlias = flow.child("label", {innerText: " Alias: "});
-    boundTextInput(flow, () => server.alias ?? "", v => server.alias = v, lblAlias);
+    let lblAlias = flow.child("label", { innerText: " Alias: " });
+    let inAlias = boundTextInput(flow, () => server.alias ?? "", v => server.alias = v, lblAlias);
+    inAlias.placeholder = server.id;
 
     let btRemove = flow.child<HTMLButtonElement>("button", {
         type: "button",
@@ -161,6 +192,32 @@ function mkLlmLine(flow: Flow, server: ILlmServer) {
         SaveSettings();
         Flow.Dirty();
     });
+    flow.bind(() => {
+        btRemove.disabled = !!loopConfigedAiFunctions().find(c => c.serverKey === server.id);
+    });
+}
+function getServerName(server: ILlmServer): string {
+    return server.alias || server.url || server.id || "???";
+}
+
+function mkAiConfig(flow: Flow, aiFunction: IAIFunction) {
+    lbl(flow, "LLM Server:");
+    let server = addBoundDropDown(flow,
+        () => [["", ""], ..._config.llmServers.map(s => [s.id, getServerName(s)] as Option)],
+        () => aiFunction.serverKey ?? "",
+        v => aiFunction.serverKey = v,
+    );
+    let container = flow.child("div");
+
+    lbl(flow, "System Prompt", container);
+
+    boundTextArea(flow,
+        () => aiFunction.systemPrompt ?? "",
+        v => aiFunction.systemPrompt = v,
+        container
+    )
+    
+    flow.conditionalStyle(container, "noDisp", () => server.value === "");
 }
 
 function lbl(flow: Flow, str: string, parent?: HTMLElement) {
@@ -186,8 +243,23 @@ function boundTextInput(flow: Flow, getter: () => string, setter: (val: string) 
     return input;
 }
 
+function boundTextArea(flow: Flow, getter: () => string, setter: (val: string) => void, parent?: HTMLElement): HTMLTextAreaElement {
+    let input = flow.elem<HTMLTextAreaElement>(parent, "textarea", {
+        className: "edSetTextArea",
+        autocomplete: "off",
+    });
+    flow.bind(() => {
+        input.value = getter();
+    });
+    input.addEventListener("change", () => {
+        setter(input.value);
+        SaveSettings();
+    });
+    return input;
+}
 
-function boundDropDown(flow: Flow, opts: Option[], getter: () => string, setter: (val: string) => void, parent?: HTMLElement):HTMLSelectElement {
+
+function addDropDown(flow: Flow, opts: Option[], getter: () => string, setter: (val: string) => void, parent?: HTMLElement): HTMLSelectElement {
     // assumes a static list, like options available in settings
     let dropDown = flow.elem<HTMLSelectElement>(parent, "select");
     for (const pair of opts) {
@@ -201,9 +273,24 @@ function boundDropDown(flow: Flow, opts: Option[], getter: () => string, setter:
     return dropDown;
 }
 
-function addSection(flow: Flow, label: string, builder: (flow: Flow) => void) {
-    flow.child("div", { innerText: label, className: "settingHead" });
-    let section = flow.child("div", { className: "section" });
+function addBoundDropDown(flow: Flow, opts: () => Option[], getter: () => string, setter: (val: string) => void, parent?: HTMLElement): HTMLSelectElement {
+    let dropDown = flow.elem<HTMLSelectElement>(parent, "select");
+    flow.bindArray(opts, _boundOpt, dropDown);
+    flow.bind(() => dropDown.value = getter());
+    dropDown.addEventListener("change", () => {
+        setter(dropDown.value);
+        SaveSettings();
+    });
+    return dropDown;
+}
+function _boundOpt(flow: Flow, opt: Option) {
+    let root = flow.root<HTMLOptionElement>("option", { value: opt[0] });
+    flow.bind(() => root.innerText = opt[1]);
+}
+
+function addSection(flow: Flow, label: string, builder: (flow: Flow) => void, host?: HTMLElement) {
+    flow.elem(host, "div", { innerText: label, className: "settingHead" });
+    let section = flow.elem(host, "div", { className: "section" });
     flow.bindCtl(builder, section);
 }
 
