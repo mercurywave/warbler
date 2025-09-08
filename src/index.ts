@@ -33,6 +33,7 @@ function mkRoot(flow: Flow) {
         if (View.CurrView().folder) note.folderId = View.CurrView().folder?.id;
         View.ForceAdd(note);
     });
+    flow.conditionalStyle(btAddNote, "noDisp", () => !View.CurrView().canAddNotes);
 }
 
 async function setup(): Promise<void> {

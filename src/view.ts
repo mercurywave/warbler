@@ -18,6 +18,8 @@ export class ViewData {
         this.type = type;
     }
 
+    public get canAddNotes(): boolean { return this.type != eView.Settings; }
+
     public get more(): number { return this._fullResults.length - this.notes.length; }
 
     // will automatically include children notes along side the main note
