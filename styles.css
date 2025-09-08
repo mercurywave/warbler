@@ -62,7 +62,7 @@ body {
 }
 
 .fade-out-view {
-    animation: fadeOut 200ms ease-in forwards;
+    animation: fadeOut 150ms ease-in forwards;
 }
 
 @keyframes fadeIn {

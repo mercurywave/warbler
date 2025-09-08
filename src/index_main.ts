@@ -47,7 +47,8 @@ function mkEditFolderName(flow: Flow) {
 }
 
 function rendNotesList(flow: Flow) {
-    let bind = flow.bindArray(() => View.CurrView().notes, mkNoteControl);
+    let view = View.CurrView();
+    let bind = flow.bindArray(() => view.notes, mkNoteControl);
     bind.setAnimRemoval(200, "fade-out");
 }
 
