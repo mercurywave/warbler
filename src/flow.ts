@@ -194,11 +194,12 @@ export class Flow {
         return arr;
     }
 
-    public routePage(host: HTMLElement | null) {
+    public routePage(host: HTMLElement | null, fixedPath?: string) {
         let state: string | Nil = null;
         this.bind(() => {
-            if (Route.GetUniqPage() != state) {
-                state = Route.GetUniqPage();
+            let page = fixedPath ?? Route.GetUniqPage();
+            if (page != state) {
+                state = page;
                 let flow = new Flow(this, host);
                 Route.Render(flow);
             }

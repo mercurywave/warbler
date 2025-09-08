@@ -12,8 +12,10 @@ export function mkMain(flow: Flow, view: ViewData) {
     flow.root("div", { className: "mainInner" });
     flow.bindCtl(mkViewHeader);
     let viewContainer = flow.child("div", { className: "viewContainer" });
-    //flow.bindObject(() => View.CurrView(), mkMainPane, viewContainer);
-    flow.routePage(viewContainer);
+    
+    // this snapshots the route at time of construction, because we manage this via views at parent level
+    flow.routePage(viewContainer, Route.GetUniqPage());
+
     flow.child("div", { className: "scrollPad" })
 }
 
