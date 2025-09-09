@@ -10,23 +10,24 @@ export namespace Speech {
             innerText: "🎙️",
             className: "btRecord",
         });
-        let listen: Listener = new Listener();
-        listen.then(b => {
-            btAdd.classList.add("processing");
-            tryProcessAudio(b, flow, note)
-                .finally(() => btAdd.classList.remove("processing"));
-        });
-        listen.begin(() => btAdd.classList.add("recording"));
-        listen.finally(() => btAdd.classList.remove("recording"));
+        let manager = new RecordManager();
         btAdd.addEventListener("click", () => {
-            if (listen.isRecording) {
-                listen.stop();
+            if (MicInterface.isRecording()) {
+                MicInterface.stop();
             }
             else {
-                listen.record();
+                let record = manager.makeRecording();
+                record.onBegin().then(() => btAdd.classList.add("recording") );
+                record.onCaptured().then(b => {
+                    btAdd.classList.add("processing");
+                    tryProcessAudio(b, flow, note)
+                        .finally(() => btAdd.classList.remove("processing"));
+                });
+                record.onFinally().then(() => btAdd.classList.remove("recording") );
+                MicInterface.record(record);
             }
         });
-        flow.unwind(() => listen.cancel());
+        flow.unwind(() => manager.cancelInFlight());
         flow.conditionalStyle(btAdd, "noDisp", () => !audioType());
     }
 
@@ -39,7 +40,7 @@ export namespace Speech {
                 break;
             default: throw 'audio type not implemented'
         }
-        if(addition != ""){
+        if (addition != "") {
             note.text = util.appendPiece(note.text, '\n', addition);
             Flow.Dirty();
         }
@@ -75,7 +76,7 @@ async function runWhisperAsr(blob: Blob): Promise<string> {
         if (response.ok) {
             const result = await response.json();
             console.log('Response from backend:', result);
-            return result.segments.map((s:any) => s.text.trim()).join('\n');
+            return result.segments.map((s: any) => s.text.trim()).join('\n');
         } else {
             console.error('Failed to send audio:', response.status, response.statusText);
             return '';
@@ -86,21 +87,57 @@ async function runWhisperAsr(blob: Blob): Promise<string> {
     }
 }
 
-// there can only be one listener active at a time
-let _listener: Listener | Nil = null;
+class RecordManager {
+    private _job: RecordJob | Nil = null;
+    public makeRecording(): RecordJob {
+        let job = new RecordJob();
+        this._job = job;
+        this._job.onFinally().then(() => {
+            if (this._job === job)
+                this._job = null;
+        });
+        return job;
+    }
+    public cancelInFlight() {
+        this._job?.triggerCancel();
+    }
+}
 
-class Listener {
-    private _mediaRecorder: MediaRecorder | Nil = null;
-    private _audioChunks: Blob[] = [];
-    private _stream: MediaStream | Nil = null;
-    public _recording = false;
-    public _canceled = false;
-    public _onBegin: (() => void) | Nil = null;
-    public _onFinal: (() => void) | Nil = null;
-    public _onComplete: ((blob: Blob) => void) | Nil = null;
+class RecordJob {
+    private _beginTask: Deferred<void> = new Deferred();
+    private _cancelTask: Deferred<void> = new Deferred();
+    private _finally: Deferred<void> = new Deferred();
+    private _mainTask: Deferred<Blob> = new Deferred();
+    private _isCancelled: boolean = false;
 
-    async initAudio() {
-        this._stream = await navigator.mediaDevices.getUserMedia({
+    public onBegin(): Promise<void> { return this._beginTask; }
+    public onCancel(): Promise<void> { return this._cancelTask; }
+    public onFinally(): Promise<void> { return this._finally; }
+    public onCaptured(): Promise<Blob> { return this._mainTask; }
+    public get isCancelled(): boolean { return this._isCancelled; }
+
+    public triggerBegin() {
+        this._beginTask.resolve();
+    }
+    public triggerCancel() {
+        this._isCancelled = true;
+        this._cancelTask.resolve();
+        this._finally.resolve();
+    }
+    public triggerResolve(blob: Blob) {
+        this._mainTask.resolve(blob);
+        this._finally.resolve();
+    }
+}
+
+namespace MicInterface {
+    let _mediaRecorder: MediaRecorder | Nil = null;
+    let _audioChunks: Blob[] = [];
+    let _stream: MediaStream | Nil = null;
+    let _job: RecordJob | Nil = null; // only one job active at a time
+
+    async function initAudio(job: RecordJob) {
+        _stream = await navigator.mediaDevices.getUserMedia({
             audio: {
                 sampleRate: 16000, // Set sample rate to 16kHz for ASR
                 channelCount: 1,
@@ -108,59 +145,41 @@ class Listener {
                 noiseSuppression: true,
             }
         });
-        if (this._canceled) return;
-        this._mediaRecorder = new MediaRecorder(this._stream);
+        if (job.isCancelled) {
+            _stream = null;
+            return;
+        }
+        _mediaRecorder = new MediaRecorder(_stream);
 
-        this._mediaRecorder.onstart = (event) => {
-            if (this._onBegin) this._onBegin();
+        _mediaRecorder.onstart = () => {
+            job.triggerBegin();
         };
-        this._mediaRecorder.ondataavailable = (event) => {
+        _mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
-                this._audioChunks.push(event.data);
+                _audioChunks.push(event.data);
             }
         };
-        this._mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(this._audioChunks, { type: 'audio/wav' });
-            this._audioChunks = [];
-            this.resolve(audioBlob);
-            _listener = null;
-            this._mediaRecorder = null;
-            this._stream = null;
+        _mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(_audioChunks, { type: 'audio/wav' });
+            _audioChunks = [];
+            _job?.triggerResolve(audioBlob);
+            _job = null;
+            _mediaRecorder = null;
+            _stream = null;
         };
     }
-    public record() {
-        _listener?.cancel();
-        _listener = this;
-        this._recording = true;
-        this.initAudio().then(() => {
-            if (!this._canceled) {
-                this._mediaRecorder?.start();
-            }
-        });
+    export async function record(job: RecordJob) {
+        _job?.triggerCancel();
+        _job = job;
+        await initAudio(job);
+        if (!job.isCancelled)
+            _mediaRecorder?.start();
     }
-    public stop() {
-        this._recording = false;
-        if (this._mediaRecorder && this._mediaRecorder.state !== 'inactive') {
-            this._mediaRecorder.stop();
-            this._stream?.getTracks().forEach(track => track.stop());
+    export function stop() {
+        if (_mediaRecorder && _mediaRecorder.state !== 'inactive') {
+            _mediaRecorder.stop();
+            _stream?.getTracks().forEach(track => track.stop());
         }
     }
-    public cancel() {
-        if (!this._recording) return;
-        this._canceled = true;
-        this.stop();
-        if (this._onFinal)
-            this._onFinal();
-    }
-    public begin(handler: (() => void)) { this._onBegin = handler; }
-    public then(handler: ((blob: Blob) => void)) { this._onComplete = handler; }
-    public finally(handler: (() => void)) { this._onFinal = handler; }
-    public resolve(blob: Blob) {
-        if (!this._canceled)
-            this._onComplete?.(blob);
-        if (this._onFinal)
-            this._onFinal();
-    }
-    public get isRecording(): boolean { return this._recording; }
+    export function isRecording(): boolean { return !!_job && !_job.isCancelled; }
 }
-

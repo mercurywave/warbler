@@ -93,3 +93,18 @@ export class Deferred<T> implements Promise<T> {
     public reject(reason?: any) { this._rejectSelf(reason); }
 
 }
+
+
+export class Broadcaster<T> {
+    private _listeners: ((e:T) => void)[] = [];
+    
+    public hook(callback:(e:T) => void){
+        this._listeners.push(callback);
+    }
+
+    public trigger(ev: T){
+        for (const callback of [...this._listeners]) {
+            callback(ev);
+        }
+    }
+}
