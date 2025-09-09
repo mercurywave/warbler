@@ -1,11 +1,13 @@
 import { DB } from "./DB";
+import { Flow } from "./flow";
 import { Folder } from "./folder";
-import { Nil } from "./util";
+import { Nil, util } from "./util";
 
 // in-memory interface
 export class Note {
     public _meta: NoteMeta;
     public _needsDbSave: boolean = false;
+    public _pendingAudio: PendingRecording[] = [];
     public constructor(meta: NoteMeta) {
         this._meta = meta;
     }
@@ -51,6 +53,48 @@ export class Note {
     public addChild(child: Note) {
         this.data.childrenIds.push(child.id);
         this.FlagDirty();
+    }
+
+    public StartNewRecording(): PendingRecording {
+        let pend = new PendingRecording(this);
+        this._pendingAudio.push(pend);
+        return pend;
+    }
+    public _syncRecordings() {
+        if (this._pendingAudio.find(p => p._isCancelled)) {
+            this._pendingAudio = this._pendingAudio.filter(p => p._isCancelled);
+            Flow.Dirty();
+        }
+        if (this._pendingAudio.every(p => p.isDone)) {
+            for (const pend of this._pendingAudio) {
+                if (pend._processedText != "")
+                    this.text = util.appendPiece(this.text, '\n', pend._processedText);
+            }
+            Flow.Dirty();
+        }
+    }
+}
+
+export class PendingRecording {
+    private _note: Note;
+    public _processedText: string = "";
+    public isDone: boolean = false;
+    public _isCancelled: boolean = false;
+    public _failed: boolean = false;
+    public constructor(note: Note) {
+        this._note = note;
+    }
+    public Complete(textToAdd: string) {
+        this._processedText = textToAdd;
+        this.isDone = true;
+        this._note._syncRecordings();
+    }
+    public Cancel() {
+        this._isCancelled = true;
+        this._note._syncRecordings();
+    }
+    public Fail() {
+        this._failed = true;
     }
 }
 

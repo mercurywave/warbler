@@ -1,6 +1,6 @@
 import { Flow } from "./flow";
 import { Config } from "./index_settings";
-import { Note } from "./note";
+import { Note, PendingRecording } from "./note";
 import { Deferred, Nil, util } from "./util";
 
 export namespace Speech {
@@ -17,13 +17,15 @@ export namespace Speech {
             }
             else {
                 let record = manager.makeRecording();
-                record.onBegin().then(() => btAdd.classList.add("recording") );
+                let pend = note.StartNewRecording();
+                record.onBegin().then(() => btAdd.classList.add("recording"));
                 record.onCaptured().then(b => {
                     btAdd.classList.add("processing");
-                    tryProcessAudio(b, flow, note)
+                    tryProcessAudio(b, flow, note, pend)
                         .finally(() => btAdd.classList.remove("processing"));
                 });
-                record.onFinally().then(() => btAdd.classList.remove("recording") );
+                record.onCancel().then(() => pend.Cancel());
+                record.onFinally().then(() => btAdd.classList.remove("recording"));
                 MicInterface.record(record);
             }
         });
@@ -31,18 +33,21 @@ export namespace Speech {
         flow.conditionalStyle(btAdd, "noDisp", () => !audioType());
     }
 
-    async function tryProcessAudio(blob: Blob, flow: Flow, note: Note) {
+    async function tryProcessAudio(blob: Blob, flow: Flow, note: Note, pend: PendingRecording) {
         console.log("audio recorded");
-        let addition = '';
-        switch (audioType()) {
-            case 'WhisperAsr':
-                addition = await runWhisperAsr(blob);
-                break;
-            default: throw 'audio type not implemented'
-        }
-        if (addition != "") {
-            note.text = util.appendPiece(note.text, '\n', addition);
-            Flow.Dirty();
+        try {
+            let addition = '';
+            switch (audioType()) {
+                case 'WhisperAsr':
+                    addition = await runWhisperAsr(blob);
+                    break;
+                default: throw 'audio type not implemented'
+            }
+            if (addition != "") {
+                pend.Complete(addition);
+            }
+        } catch (e) {
+            pend.Fail();
         }
     }
 
@@ -79,11 +84,11 @@ async function runWhisperAsr(blob: Blob): Promise<string> {
             return result.segments.map((s: any) => s.text.trim()).join('\n');
         } else {
             console.error('Failed to send audio:', response.status, response.statusText);
-            return '';
+            throw 'Error sending audio';
         }
     } catch (error) {
         console.error('Error sending audio:', error);
-        return '';
+        throw 'Error sending audio';
     }
 }
 
