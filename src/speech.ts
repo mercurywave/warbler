@@ -86,7 +86,7 @@ export namespace Speech {
             }
         });
         flow.unwind(() => manager.cancelInFlight());
-        flow.conditionalStyle(btAdd, "noDisp", () => !audioType());
+        flow.conditionalStyle(btAdd, "noDisp", () => !isEnabled());
     }
 
     async function tryProcessAudio(blob: Blob, trans: PendingTranscription) {
@@ -104,6 +104,8 @@ export namespace Speech {
             trans.Fail(`Transcription Error: ${e}`);
         }
     }
+
+    export function isEnabled(): boolean { return !!audioType(); }
 
     export function audioType(): string | Nil {
         let type = Config().transcriptType;

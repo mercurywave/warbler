@@ -3,6 +3,7 @@ import { Flow, Route } from "./flow";
 import { mkMain } from "./index_main";
 import { mkNavigation } from "./index_navigation";
 import { LoadSettings } from "./index_settings";
+import { Speech } from "./speech";
 import { View } from "./view";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -39,6 +40,7 @@ function mkRoot(flow: Flow) {
         className: "btPrimary",
     });
     btAddVoiceNote.addEventListener("click", () => spawnNote(true));
+    flow.conditionalStyle(btAddVoiceNote, "noDisp", () => !Speech.isEnabled());
 }
 
 function spawnNote(startRecording?: boolean) {
