@@ -288,6 +288,36 @@ body {
     color: #fff !important;
 }
 
+
+.pendRec{
+    font-size: smaller;
+    outline: 1px solid #3C4A56;
+    padding: 6px;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+.pendRec button{
+    background: none;
+    border: 0;
+    outline: 1px solid #fff;
+    border-radius: 3px;
+    color: #fff;
+    font-size: .7em;
+}
+.btStop:disabled{
+    color: #586169;
+    outline: 1px solid #586169;
+}
+.lblRecStatus{
+    width: 100px;
+}
+
+.lblError{
+    color: rgb(188, 40, 40);
+    font-weight: 500;
+}
+
 .bubble .noteCreation {
     color: #A2A59B;
     margin-left: 20px;

@@ -1,9 +1,67 @@
 import { Flow } from "./flow";
 import { Config } from "./index_settings";
-import { Note, PendingRecording } from "./note";
+import { Note, PendingTranscription } from "./note";
 import { Deferred, Nil, util } from "./util";
 
 export namespace Speech {
+    export function mkRecordWidget(flow: Flow, trans: PendingTranscription) {
+        let span = flow.root("div", { className: "pendRec" });
+        let record = trans._recording;
+        let btStop = flow.elem<HTMLButtonElement>(span, "button", {
+            type: "button",
+            innerText: "⏹",
+            className: "btStop",
+        });
+        btStop.addEventListener("click", () => {
+            MicInterface.stop();
+        });
+        let lblStatus = flow.child("span", { className: "lblRecStatus" });
+        let lblDurr = flow.child("span", { innerText: "0:00" });
+        record.onBegin().then(() => {
+            lblStatus.innerText = "Recording";
+
+            // start updating clock
+            let recordingStartTime = Date.now();
+            let durationInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+                lblDurr.textContent = formatDuration(elapsed);
+            }, 1000);
+
+            record.onCaptured().then(blob => {
+                lblStatus.innerText = "Transcribing";
+                clearInterval(durationInterval);
+
+                // Get final duration from the WAV blob
+                getWavDuration(blob).then(duration => {
+                    lblDurr.textContent = formatDuration(duration);
+                });
+            });
+        });
+        let lblError = flow.child("span", { className: "lblError" });
+        flow.bind(() => lblError.innerText = trans.errorMsg);
+
+        let btRetry = flow.elem<HTMLButtonElement>(span, "button", {
+            type: "button",
+            innerText: "Retry",
+        });
+        btRetry.addEventListener("click", () => {
+            trans.Retry();
+            record.onCaptured().then(b => tryProcessAudio(b, trans));
+        });
+        flow.conditionalStyle(btRetry, "noDisp", () => !trans.hasErrored || trans.isDone || trans.isCancelled);
+
+        let btDiscard = flow.elem<HTMLButtonElement>(span, "button", {
+            type: "button",
+            innerText: "Discard",
+        });
+        btDiscard.addEventListener("click", () => {
+            trans.Cancel();
+        });
+        flow.conditionalStyle(btDiscard, "noDisp", () => !trans.hasErrored || trans.isDone || trans.isCancelled);
+
+        record.onCaptured().then(() => btStop.disabled = true);
+    }
+
     export function mkRecordButton(flow: Flow, span: HTMLElement, note: Note) {
         let btAdd = flow.elem<HTMLButtonElement>(span, "button", {
             type: "button",
@@ -17,12 +75,10 @@ export namespace Speech {
             }
             else {
                 let record = manager.makeRecording();
-                let pend = note.StartNewRecording();
+                let pend = note.StartNewRecording(record);
                 record.onBegin().then(() => btAdd.classList.add("recording"));
                 record.onCaptured().then(b => {
-                    btAdd.classList.add("processing");
-                    tryProcessAudio(b, flow, note, pend)
-                        .finally(() => btAdd.classList.remove("processing"));
+                    tryProcessAudio(b, pend);
                 });
                 record.onCancel().then(() => pend.Cancel());
                 record.onFinally().then(() => btAdd.classList.remove("recording"));
@@ -33,7 +89,7 @@ export namespace Speech {
         flow.conditionalStyle(btAdd, "noDisp", () => !audioType());
     }
 
-    async function tryProcessAudio(blob: Blob, flow: Flow, note: Note, pend: PendingRecording) {
+    async function tryProcessAudio(blob: Blob, trans: PendingTranscription) {
         console.log("audio recorded");
         try {
             let addition = '';
@@ -43,11 +99,9 @@ export namespace Speech {
                     break;
                 default: throw 'audio type not implemented'
             }
-            if (addition != "") {
-                pend.Complete(addition);
-            }
+            trans.Complete(addition);
         } catch (e) {
-            pend.Fail();
+            trans.Fail(`Transcription Error: ${e}`);
         }
     }
 
@@ -108,7 +162,7 @@ class RecordManager {
     }
 }
 
-class RecordJob {
+export class RecordJob {
     private _beginTask: Deferred<void> = new Deferred();
     private _cancelTask: Deferred<void> = new Deferred();
     private _finally: Deferred<void> = new Deferred();
@@ -187,4 +241,25 @@ namespace MicInterface {
         }
     }
     export function isRecording(): boolean { return !!_job && !_job.isCancelled; }
+}
+
+function formatDuration(seconds: number) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.round(seconds) % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Utility to get WAV duration from blob
+function getWavDuration(blob: Blob): Promise<number> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            if (!e.target?.result) { reject(); return; }
+            const audioContext = new window.AudioContext();
+            audioContext.decodeAudioData(e.target.result as ArrayBuffer, (buffer) => {
+                resolve(buffer.duration);
+            }, reject);
+        };
+        reader.readAsArrayBuffer(blob);
+    });
 }

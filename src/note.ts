@@ -1,13 +1,14 @@
 import { DB } from "./DB";
 import { Flow } from "./flow";
 import { Folder } from "./folder";
+import { RecordJob } from "./speech";
 import { Nil, util } from "./util";
 
 // in-memory interface
 export class Note {
     public _meta: NoteMeta;
     public _needsDbSave: boolean = false;
-    public _pendingAudio: PendingRecording[] = [];
+    public _pendingAudio: PendingTranscription[] = [];
     public constructor(meta: NoteMeta) {
         this._meta = meta;
     }
@@ -55,37 +56,45 @@ export class Note {
         this.FlagDirty();
     }
 
-    public StartNewRecording(): PendingRecording {
-        let pend = new PendingRecording(this);
-        this._pendingAudio.push(pend);
-        return pend;
+    public StartNewRecording(recording: RecordJob): PendingTranscription {
+        let trans = new PendingTranscription(this, recording);
+        this._pendingAudio.push(trans);
+        Flow.Dirty();
+        return trans;
     }
     public _syncRecordings() {
-        if (this._pendingAudio.find(p => p._isCancelled)) {
-            this._pendingAudio = this._pendingAudio.filter(p => p._isCancelled);
+        if (this._pendingAudio.find(p => p.isCancelled)) {
+            this._pendingAudio = this._pendingAudio.filter(p => !p.isCancelled);
             Flow.Dirty();
         }
         if (this._pendingAudio.every(p => p.isDone)) {
             for (const pend of this._pendingAudio) {
-                if (pend._processedText != "")
-                    this.text = util.appendPiece(this.text, '\n', pend._processedText);
+                if (pend._transcribedText != "")
+                    this.text = util.appendPiece(this.text, '\n', pend._transcribedText);
             }
+            this._pendingAudio = [];
             Flow.Dirty();
         }
     }
 }
 
-export class PendingRecording {
+export class PendingTranscription {
     private _note: Note;
-    public _processedText: string = "";
+    public _transcribedText: string = "";
     public isDone: boolean = false;
-    public _isCancelled: boolean = false;
-    public _failed: boolean = false;
-    public constructor(note: Note) {
+    private _isCancelled: boolean = false;
+    private _failureMsg: string | Nil = null;
+    public _recording: RecordJob;
+
+    public constructor(note: Note, recording: RecordJob) {
         this._note = note;
+        this._recording = recording;
     }
+    public get isCancelled(): boolean { return this._isCancelled; }
+    public get hasErrored(): boolean { return !!this._failureMsg; }
+    public get errorMsg(): string { return this._failureMsg ?? ""; }
     public Complete(textToAdd: string) {
-        this._processedText = textToAdd;
+        this._transcribedText = textToAdd;
         this.isDone = true;
         this._note._syncRecordings();
     }
@@ -93,8 +102,13 @@ export class PendingRecording {
         this._isCancelled = true;
         this._note._syncRecordings();
     }
-    public Fail() {
-        this._failed = true;
+    public Fail(reason: string) {
+        this._failureMsg = reason;
+        Flow.Dirty();
+    }
+    public Retry(){
+        this._failureMsg = null;
+        Flow.Dirty();
     }
 }
 

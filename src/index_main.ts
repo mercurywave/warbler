@@ -92,6 +92,9 @@ function mkNoteControl(flow: Flow, note: Note) {
     edit.addEventListener("focus", () => edit.spellcheck = true);
     edit.addEventListener("blur", () => edit.spellcheck = false);
 
+    let recordings = flow.child("div");
+    flow.bindArray(() => note._pendingAudio, Speech.mkRecordWidget, recordings);
+
     let footer = flow.child("div", { className: "bubbleFooter" });
     mkNoteFooter(flow, footer, note);
 }
