@@ -3,6 +3,7 @@ import { Nil } from "./util";
 let __tree: Flow;
 let __allFlows: Flow[] = [];
 let __scheduled: boolean = false;
+let __mail: Mail[] = [];
 
 
 type ListOrBound<T> = T[] | (() => T[]);
@@ -30,6 +31,7 @@ export class Flow {
 
     public static Reflow(from?: Flow) {
         let index = 0;
+        let mail = [...__mail];
 
         let flows = [...__allFlows];
         if (from) {
@@ -53,6 +55,10 @@ export class Flow {
                 break;
             }
         }
+        let deadLetters = mail.filter(m => __mail.includes(m));
+        if (deadLetters.length) {
+            console.error("Dead letter failed to deliver", deadLetters);
+        }
         setTimeout(() => {
             Flow.Cleanup();
         }, 0);
@@ -66,6 +72,20 @@ export class Flow {
             }
         }
         __allFlows = __allFlows.filter(r => !toRemove.includes(r));
+    }
+
+    // Mail is meant to be picked up. Dead letters log to console
+    public static SendMail(msg: Mail) {
+        __mail.push();
+        Flow.Dirty();
+    }
+
+    public getMail(): Mail[] { return [...__mail]; }
+    public searchMail(test: (m: Mail) => boolean): Mail | Nil {
+        return __mail.find(m => test(m));
+    }
+    public readMail(mail: Mail) {
+        __mail = __mail.filter(m => m != mail);
     }
 
     private _ancestor: Flow | null;
@@ -412,4 +432,9 @@ export class Route {
         return path;
     }
 
+}
+
+export interface Mail {
+    type: string;
+    data: any;
 }
