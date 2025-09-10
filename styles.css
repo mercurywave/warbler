@@ -110,6 +110,10 @@ body {
     white-space: nowrap;
     word-break: break-word;
 }
+.btPrimary.recording{
+    outline: 2px solid #f03400 !important;
+    background-color: #5e382e !important; 
+}
 
 .btPrimary:active,
 .btPrimary:hover,

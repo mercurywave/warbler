@@ -3,7 +3,7 @@ import { Flow, Route } from "./flow";
 import { mkMain } from "./index_main";
 import { mkNavigation } from "./index_navigation";
 import { LoadSettings } from "./index_settings";
-import { Speech } from "./speech";
+import { MicInterface, Speech } from "./speech";
 import { View } from "./view";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -39,14 +39,22 @@ function mkRoot(flow: Flow) {
         innerText: "🎙️",
         className: "btPrimary",
     });
-    btAddVoiceNote.addEventListener("click", () => spawnNote(true));
+    btAddVoiceNote.addEventListener("click", () => {
+        if(MicInterface.isRecording()){
+            MicInterface.stop();
+        }
+        else
+            spawnNote(true);
+    });
     flow.conditionalStyle(btAddVoiceNote, "noDisp", () => !Speech.isEnabled());
+    flow.conditionalStyle(btAddVoiceNote, "recording", () => MicInterface.isRecording());
 }
 
 function spawnNote(startRecording?: boolean) {
     let note = DB.CreateNote();
     if (View.CurrView().folder) note.folderId = View.CurrView().folder?.id;
     View.ForceAdd(note);
+    if(startRecording) Flow.SendMail({type: 'autoRecord', data: note});
 }
 
 async function setup(): Promise<void> {

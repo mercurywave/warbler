@@ -69,24 +69,27 @@ export namespace Speech {
             className: "btRecord",
         });
         let manager = new RecordManager();
+        let startRecLambda = function () {
+            let record = manager.makeRecording();
+            let pend = note.StartNewRecording(record);
+            record.onBegin().then(() => btAdd.classList.add("recording"));
+            record.onCaptured().then(b => {
+                tryProcessAudio(b, pend);
+            });
+            record.onCancel().then(() => pend.Cancel());
+            record.onFinally().then(() => btAdd.classList.remove("recording"));
+            MicInterface.record(record);
+        }
         btAdd.addEventListener("click", () => {
             if (MicInterface.isRecording()) {
                 MicInterface.stop();
             }
-            else {
-                let record = manager.makeRecording();
-                let pend = note.StartNewRecording(record);
-                record.onBegin().then(() => btAdd.classList.add("recording"));
-                record.onCaptured().then(b => {
-                    tryProcessAudio(b, pend);
-                });
-                record.onCancel().then(() => pend.Cancel());
-                record.onFinally().then(() => btAdd.classList.remove("recording"));
-                MicInterface.record(record);
-            }
+            else startRecLambda();
         });
         flow.unwind(() => manager.cancelInFlight());
         flow.conditionalStyle(btAdd, "noDisp", () => !isEnabled());
+
+        flow.bindMail('autoRecord', m => m.data === note, () => startRecLambda());
     }
 
     async function tryProcessAudio(blob: Blob, trans: PendingTranscription) {

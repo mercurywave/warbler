@@ -76,16 +76,27 @@ export class Flow {
 
     // Mail is meant to be picked up. Dead letters log to console
     public static SendMail(msg: Mail) {
-        __mail.push();
+        __mail.push(msg);
         Flow.Dirty();
     }
 
-    public getMail(): Mail[] { return [...__mail]; }
-    public searchMail(test: (m: Mail) => boolean): Mail | Nil {
-        return __mail.find(m => test(m));
+    public static getAllMail(): Mail[] { return [...__mail]; }
+    public static searchMail(test: (m: Mail) => boolean): Mail | Nil {
+        let found = __mail.find(m => test(m));
+        if (found) Flow.readMail(found);
+        return found;
     }
-    public readMail(mail: Mail) {
+    public static readMail(mail: Mail) {
         __mail = __mail.filter(m => m != mail);
+    }
+    public bindMail(type: string, test: ((m: Mail) => boolean) | Nil, onFound: (data: any) => void) {
+        // simple binding for common mail collection
+        this.bind(() => {
+            let found = Flow.searchMail(m => m.type === type && (!test || test(m)));
+            if(found){
+                onFound(found.data);
+            }
+        });
     }
 
     private _ancestor: Flow | null;
@@ -436,5 +447,5 @@ export class Route {
 
 export interface Mail {
     type: string;
-    data: any;
+    data?: any;
 }
