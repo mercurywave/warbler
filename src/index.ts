@@ -18,22 +18,33 @@ function initUi() {
 function mkRoot(flow: Flow) {
     flow.bindCtl(mkNavigation);
     let main = flow.child("div", { id: "main" });
-    
+
     let outer = flow.elem(main, "div", { id: "mainOuter" });
     let bind = flow.bindObject(() => View.CurrView(), mkMain, outer);
     bind.setAnimRemoval(200, "fade-out-view");
 
-    let btAddNote = flow.child<HTMLButtonElement>("button", {
+    let actionCenter = flow.child("div", { className: "actionPanel" });
+    flow.conditionalStyle(actionCenter, "noDisp", () => !View.CurrView().canAddNotes);
+
+    let btAddNote = flow.elem<HTMLButtonElement>(actionCenter, "button", {
         type: "button",
         innerText: "+ Add Note",
         className: "btPrimary",
     });
-    btAddNote.addEventListener("click", () => {
-        let note = DB.CreateNote();
-        if (View.CurrView().folder) note.folderId = View.CurrView().folder?.id;
-        View.ForceAdd(note);
+    btAddNote.addEventListener("click", () => spawnNote());
+
+    let btAddVoiceNote = flow.elem<HTMLButtonElement>(actionCenter, "button", {
+        type: "button",
+        innerText: "🎙️",
+        className: "btPrimary",
     });
-    flow.conditionalStyle(btAddNote, "noDisp", () => !View.CurrView().canAddNotes);
+    btAddVoiceNote.addEventListener("click", () => spawnNote(true));
+}
+
+function spawnNote(startRecording?: boolean) {
+    let note = DB.CreateNote();
+    if (View.CurrView().folder) note.folderId = View.CurrView().folder?.id;
+    View.ForceAdd(note);
 }
 
 async function setup(): Promise<void> {

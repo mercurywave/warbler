@@ -85,11 +85,15 @@ body {
     }
 }
 
-.btPrimary {
+.actionPanel{
     position: absolute;
     right: 10px;
     bottom: 10px;
-
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+.btPrimary {
     margin: 3px 0;
     align-items: center;
     background-color: #202A33;

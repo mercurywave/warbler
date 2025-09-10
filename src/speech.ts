@@ -189,7 +189,7 @@ export class RecordJob {
     }
 }
 
-namespace MicInterface {
+export namespace MicInterface {
     let _mediaRecorder: MediaRecorder | Nil = null;
     let _audioChunks: Blob[] = [];
     let _stream: MediaStream | Nil = null;
