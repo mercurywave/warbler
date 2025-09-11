@@ -349,21 +349,24 @@ body {
     font-weight: 500;
     background: none;
     border: 0;
-    outline: 1px solid #3C4A56;
+    outline: 0;
     border-radius: 3px;
     color: #A2A59B;
     font-size: .7em;
     margin: 0 10px 0 0;
     transform: translateY(2px);
 }
-.btRecord.recording{
+.bubbleFooter .btRecord{
+    outline: 1px solid #3C4A56;
+}
+.bubbleFooter .btRecord.recording{
     outline: 2px solid #f03400;
 }
-.btRecord.processing{
+.bubbleFooter .btRecord.processing{
     outline: 2px solid #0078f0;
 }
 
-.btAddSubNote:hover{
+.bubbleFooter button:hover{
     outline: 1px solid #586169;
 }
 
@@ -373,9 +376,37 @@ body {
 
 .bubbleFooter .noteCreation {
     color: #A2A59B;
-    margin-left: 20px;
+    margin-right: 10px;
     font-size: .7em;
     transform: translateY(1px);
+}
+
+.mnuOptWrap{
+    position: relative;
+}
+.mnuOptWrap{
+    margin-right: 5px;
+}
+.btFakeMenu{
+    font-size: .8em;
+    padding: 0 6px;
+}
+.mnuDropdown{
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0%;
+    left: 0;
+    top: 0;
+    cursor: pointer;
+    padding: 0 5px;
+}
+.mnuDropdown:hover ~ .btFakeMenu{
+    border-radius: 3px;
+    outline: 1px solid #586169;
+}
+.mnuDropdown option{
+    padding: 0 10px;
 }
 
 

@@ -12,7 +12,7 @@ export function mkMain(flow: Flow, view: ViewData) {
     flow.root("div", { className: "mainInner" });
     flow.bindCtl(mkViewHeader);
     let viewContainer = flow.child("div", { className: "viewContainer" });
-    
+
     // this snapshots the route at time of construction, because we manage this via views at parent level
     flow.routePage(viewContainer, Route.GetUniqPage());
 
@@ -122,6 +122,38 @@ function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
         className: "noteCreation",
         innerText: util.getRelativeTime(note.creationUtc),
         title: `created ${note.creationUtc}`,
+    });
+
+    let mnuNote = mkMoreMenu(flow, span);
+    mkMoreMenuOpt(flow, mnuNote, "Delete Note", () => {
+        console.log("TODO:");
+    });
+}
+
+function mkMoreMenu(flow: Flow, parent?: HTMLElement): HTMLSelectElement {
+    let wrapper = flow.elem(parent, "div", { className: "mnuOptWrap" });
+    let mnuDrop = flow.elem<HTMLSelectElement>(wrapper, "select", { className: "mnuDropdown" });
+    // this makes a hidden element selected - this is all a dumb hack, but all the options are dumb hacks
+    let badOpt = flow.elem<HTMLOptionElement>(mnuDrop, "option", { value:"", disabled:true, selected: true, hidden: true });
+    mnuDrop.addEventListener("change", () => setTimeout(() => badOpt.selected = true));
+    flow.elem<HTMLButtonElement>(wrapper, "div", {
+        innerText: "•••",
+        className: "btFakeMenu",
+    });
+    return mnuDrop;
+}
+
+function mkMoreMenuOpt(flow: Flow, select: HTMLSelectElement, lbl: string, onClick: () => void) {
+    // note - this dumb hacky dropdown requires every element to have a unique name - can't fully bind options
+    lbl = lbl + "\xA0\xA0\xA0\xA0"; // non-breaking spaces help the dumb hack look less janky
+    let btDelete = flow.elem<HTMLOptionElement>(select, "option", {
+        className: "mnuOpt",
+        textContent: lbl,
+        value: lbl
+    });
+    select.addEventListener("change", e => {
+        if (select.value === lbl)
+            onClick();
     });
 }
 
