@@ -326,12 +326,6 @@ body {
     font-weight: 500;
 }
 
-.bubble .noteCreation {
-    color: #A2A59B;
-    margin-left: 20px;
-    font-size: .7em;
-}
-
 .bubbleFooter {
     display: flex;
     flex-direction: row;
@@ -339,6 +333,7 @@ body {
     vertical-align: middle;
     margin-top: 4px;
     color: #A2A59B;
+    align-items: center;
 }
 
 .bubbleFooter select {
@@ -359,6 +354,7 @@ body {
     color: #A2A59B;
     font-size: .7em;
     margin: 0 10px 0 0;
+    transform: translateY(2px);
 }
 .btRecord.recording{
     outline: 2px solid #f03400;
@@ -369,6 +365,17 @@ body {
 
 .btAddSubNote:hover{
     outline: 1px solid #586169;
+}
+
+.bubbleFooter .spacer {
+    flex-grow: 2;
+}
+
+.bubbleFooter .noteCreation {
+    color: #A2A59B;
+    margin-left: 20px;
+    font-size: .7em;
+    transform: translateY(1px);
 }
 
 

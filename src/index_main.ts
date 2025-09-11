@@ -116,9 +116,11 @@ function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
     mkNoteFolderPicker(flow, span, note);
     flow.conditionalStyle(btAdd, "noDisp", () => note.isChild);
 
+    flow.elem(span, "span", { className: "spacer" });
+
     flow.elem(span, "span", {
         className: "noteCreation",
-        innerText: `created ${util.getRelativeTime(note.creationUtc)}`,
+        innerText: util.getRelativeTime(note.creationUtc),
         title: `created ${note.creationUtc}`,
     });
 }
