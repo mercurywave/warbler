@@ -249,6 +249,9 @@ body {
     width: calc(100% - 12px - 20px);
     background-color: #213647;
 }
+.orphanedNote{
+    background-color: #213647;
+}
 
 /* This enables auto-sizing the text area */
 .growWrap {
@@ -368,6 +371,11 @@ body {
 
 .bubbleFooter button:hover{
     outline: 1px solid #586169;
+}
+
+.bubbleFooter .parentLink {
+    cursor: pointer;
+    font-size: .7em;
 }
 
 .bubbleFooter .spacer {

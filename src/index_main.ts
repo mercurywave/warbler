@@ -77,7 +77,9 @@ Route.Register("folder", (flow, pars) => {
 
 function mkNoteControl(flow: Flow, note: Note) {
     let root = flow.root("div", { className: "bubble" });
-    flow.conditionalStyle(root, "childNote", () => note.isChild);
+    let view = View.CurrView();
+    flow.conditionalStyle(root, "childNote", () => note.isChild && view.groupByParents);
+    flow.conditionalStyle(root, "orphanedNote", () => note.isChild && !view.groupByParents);
 
     let wrapper = flow.child("div", { className: "growWrap" });
     let edit = flow.elem<HTMLTextAreaElement>(wrapper, "textarea");
