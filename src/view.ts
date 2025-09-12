@@ -55,14 +55,14 @@ export class ViewData {
         }
         return true;
     }
-    public forceRemove(note:Note) {
+    public forceRemove(note: Note) {
         this._fullResults = this._fullResults.filter(n => n !== note);
         this._notes = this._notes.filter(n => n !== note);
     }
 }
 
 export enum eView {
-    None, All, Unsorted, Folder, Tag, Settings
+    None, All, Unsorted, Folder, Tag, Settings, Deleted, SingleNote
 };
 
 export enum eSettingsPage {
@@ -103,7 +103,7 @@ export namespace View {
     }
 
     export function Deleted() {
-        reset(eView.All);
+        reset(eView.Deleted);
         _data.setChronResults(DB.DeletedNotes());
         _data.title = "Recycle Bin";
         _data.showingDeleted = true;
@@ -117,6 +117,13 @@ export namespace View {
         _data.setChronResults(list);
         _data.folder = folder;
         _data.title = "Folder";
+        finalize();
+    }
+
+    export function SingleNote(note: Note) {
+        reset(eView.SingleNote);
+        _data.setChronResults([note]);
+        _data.title = "Note";
         finalize();
     }
 

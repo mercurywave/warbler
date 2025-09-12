@@ -74,6 +74,14 @@ Route.Register("folder", (flow, pars) => {
     }
 });
 
+Route.Register("note", (flow, pars) => {
+    rendNotesList(flow);
+}, pars => {
+    let note = DB.GetNoteById(pars['id']);
+    if (!note) Route.ErrorFallback();
+    else View.SingleNote(note);
+});
+
 
 function mkNoteControl(flow: Flow, note: Note) {
     let root = flow.root("div", { className: "bubble" });
@@ -121,6 +129,16 @@ function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
     });
     mkNoteFolderPicker(flow, span, note);
     flow.conditionalStyle(btAdd, "noDisp", () => note.isChild);
+
+    let linkParent = flow.elem<HTMLAnchorElement>(span, "a", {
+        className: "parentLink",
+        innerText: "Parent Note",
+    });
+    let view = View.CurrView();
+    flow.conditionalStyle(linkParent, "noDisp", () => !(note.isChild && !view.groupByParents));
+    linkParent.addEventListener("click", () => {
+        Route.Launch("note", { id: note.parent?.id ?? "" });
+    });
 
     flow.elem(span, "span", { className: "spacer" });
 
