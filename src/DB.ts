@@ -126,9 +126,11 @@ export namespace DB {
 
     export function AllNotes(): Note[] { return _notes.filter(n => !n.isDeleted); }
     export function AllParents(): Note[] { return AllNotes().filter(n => !n.isChild); }
-    export function AllFolders(): Folder[] { return _folders; }
+    export function Unsorted(): Note[] { return AllParents().filter(n => !n.folder); }
     export function DeletedNotes(): Note[] { return _notes.filter(n => n.isDeleted); }
-    
+
+    export function AllFolders(): Folder[] { return _folders; }
+
     export function TryGetParent(note: Note): Note | Nil {
         return _notes.find(n => n.childrenIds.includes(note.id));
     }
@@ -139,11 +141,13 @@ export namespace DB {
         return _folders.find(n => n.id === id);
     }
 
-    export function HardDeleteNote(note: Note): Promise<void> {
-        return _hardDelete('notes', note.id);
+    export async function HardDeleteNote(note: Note): Promise<void> {
+        await _hardDelete('notes', note.id);
+        _notes = _notes.filter(n => n !== note);
     }
-    export function HardDeleteFolder(folder: Folder): Promise<void> {
-        return _hardDelete('folders', folder.id);
+    export async function HardDeleteFolder(folder: Folder): Promise<void> {
+        await _hardDelete('folders', folder.id);
+        _folders = _folders.filter(f => f !== folder);
     }
     async function _hardDelete<T>(db: string, id: string): Promise<void> {
         let future = new Deferred();

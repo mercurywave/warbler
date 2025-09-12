@@ -14,19 +14,18 @@ export class ViewData {
     public title: string = "";
     public isChron: boolean = false; // chronologically ordered
     public showingDeleted: boolean = false;
+    public groupByParents: boolean = true;
 
     public constructor(type: eView) {
         this.type = type;
     }
 
     public get notes(): Note[] {
-        if(!this.showingDeleted){
-            this._notes = this._notes.filter(n => !n.isDeleted)
-        }
+        this._notes = this._notes.filter(n => this.showingDeleted == n.isDeleted)
         return this._notes;
     }
 
-    public get canAddNotes(): boolean { return this.type != eView.Settings; }
+    public get canAddNotes(): boolean { return this.type != eView.Settings && !this.showingDeleted; }
 
     public get more(): number { return this._fullResults.length - this.notes.length; }
 
@@ -55,6 +54,10 @@ export class ViewData {
             this._notes.push(note);
         }
         return true;
+    }
+    public forceRemove(note:Note) {
+        this._fullResults = this._fullResults.filter(n => n !== note);
+        this._notes = this._notes.filter(n => n !== note);
     }
 }
 
@@ -96,6 +99,15 @@ export namespace View {
         reset(eView.All);
         _data.setChronResults(DB.AllParents());
         _data.title = "All";
+        finalize();
+    }
+
+    export function Deleted() {
+        reset(eView.All);
+        _data.setChronResults(DB.DeletedNotes());
+        _data.title = "Recycle Bin";
+        _data.showingDeleted = true;
+        _data.groupByParents = false;
         finalize();
     }
 

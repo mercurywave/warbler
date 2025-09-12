@@ -60,6 +60,10 @@ Route.Register("unsorted", (flow) => {
     rendNotesList(flow);
 }, () => View.Unsorted());
 
+Route.Register("recycle", (flow) => {
+    rendNotesList(flow);
+}, () => View.Deleted());
+
 Route.Register("folder", (flow, pars) => {
     rendNotesList(flow);
 }, pars => {
@@ -125,8 +129,23 @@ function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
     });
 
     let mnuNote = mkMoreMenu(flow, span);
-    mkMoreMenuOpt(flow, mnuNote, "Delete Note", () => {
+    let mUndelete = mkMoreMenuOpt(flow, mnuNote, "Undelete Note", () => {
+        note.isDeleted = false;
+    });
+    let mHardDelete = mkMoreMenuOpt(flow, mnuNote, "Hard Delete Note", () => {
+        DB.HardDeleteNote(note)
+            .then(() => {
+                View.CurrView().forceRemove(note);
+                Flow.Dirty();
+            });
+    });
+    let mDelete = mkMoreMenuOpt(flow, mnuNote, "Delete Note", () => {
         note.isDeleted = true;
+    });
+    flow.bind(() => {
+        mUndelete.hidden = !note.isDeleted;
+        mHardDelete.hidden = !note.isDeleted;
+        mDelete.hidden = note.isDeleted;
     });
 }
 
@@ -134,7 +153,7 @@ function mkMoreMenu(flow: Flow, parent?: HTMLElement): HTMLSelectElement {
     let wrapper = flow.elem(parent, "div", { className: "mnuOptWrap" });
     let mnuDrop = flow.elem<HTMLSelectElement>(wrapper, "select", { className: "mnuDropdown" });
     // this makes a hidden element selected - this is all a dumb hack, but all the options are dumb hacks
-    let badOpt = flow.elem<HTMLOptionElement>(mnuDrop, "option", { value:"", disabled:true, selected: true, hidden: true });
+    let badOpt = flow.elem<HTMLOptionElement>(mnuDrop, "option", { value: "", disabled: true, selected: true, hidden: true });
     mnuDrop.addEventListener("change", () => setTimeout(() => badOpt.selected = true));
     flow.elem<HTMLButtonElement>(wrapper, "div", {
         innerText: "•••",
@@ -143,10 +162,10 @@ function mkMoreMenu(flow: Flow, parent?: HTMLElement): HTMLSelectElement {
     return mnuDrop;
 }
 
-function mkMoreMenuOpt(flow: Flow, select: HTMLSelectElement, lbl: string, onClick: () => void) {
+function mkMoreMenuOpt(flow: Flow, select: HTMLSelectElement, lbl: string, onClick: () => void): HTMLOptionElement {
     // note - this dumb hacky dropdown requires every element to have a unique name - can't fully bind options
     lbl = lbl + "\xA0\xA0\xA0\xA0"; // non-breaking spaces help the dumb hack look less janky
-    flow.elem<HTMLOptionElement>(select, "option", {
+    let opt = flow.elem<HTMLOptionElement>(select, "option", {
         className: "mnuOpt",
         textContent: lbl,
         value: lbl
@@ -155,6 +174,7 @@ function mkMoreMenuOpt(flow: Flow, select: HTMLSelectElement, lbl: string, onCli
         if (select.value === lbl)
             onClick();
     });
+    return opt;
 }
 
 function mkNoteFolderPicker(flow: Flow, span: HTMLElement, note: Note) {

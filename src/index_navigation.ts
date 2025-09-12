@@ -16,17 +16,30 @@ export function mkNavigation(flow: Flow) {
     btAll.addEventListener("click", () => {
         Route.LaunchHome();
     });
+
     let btUnsorted = flow.child<HTMLButtonElement>("button", {
         type: "button",
         className: "btNavigate",
     });
     flow.bind(() => {
-        let cnt = DB.AllNotes().filter(n => !n.folder).length;
+        let cnt = DB.Unsorted().length;
         btUnsorted.innerText = 'Unsorted' + (cnt > 0 ? ` (${cnt})` : '');
     });
     btUnsorted.addEventListener("click", () => {
         Route.Launch("unsorted");
     });
+    flow.conditionalStyle(btUnsorted, "noDisp", () => DB.Unsorted().length == 0);
+
+    let btRecycling = flow.child<HTMLButtonElement>("button", {
+        type: "button",
+        innerText: "Recycle Bin",
+        className: "btNavigate",
+    });
+    btRecycling.addEventListener("click", () => {
+        Route.Launch("recycle");
+    });
+    flow.conditionalStyle(btRecycling, "noDisp", () => DB.DeletedNotes().length == 0);
+
     flow.bindCtl(mkFolderList);
     let btSettings = flow.child<HTMLButtonElement>("button", {
         id: "btSettings",
