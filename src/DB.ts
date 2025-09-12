@@ -124,10 +124,11 @@ export namespace DB {
         await future;
     }
 
-    export function AllNotes(): Note[] { return _notes; }
-    export function AllParents(): Note[] { return _notes.filter(n => !n.isChild); }
+    export function AllNotes(): Note[] { return _notes.filter(n => !n.isDeleted); }
+    export function AllParents(): Note[] { return AllNotes().filter(n => !n.isChild); }
     export function AllFolders(): Folder[] { return _folders; }
-
+    export function DeletedNotes(): Note[] { return _notes.filter(n => n.isDeleted); }
+    
     export function TryGetParent(note: Note): Note | Nil {
         return _notes.find(n => n.childrenIds.includes(note.id));
     }
@@ -136,5 +137,21 @@ export namespace DB {
     }
     export function GetFolderById(id: string): Folder | Nil {
         return _folders.find(n => n.id === id);
+    }
+
+    export function HardDeleteNote(note: Note): Promise<void> {
+        return _hardDelete('notes', note.id);
+    }
+    export function HardDeleteFolder(folder: Folder): Promise<void> {
+        return _hardDelete('folders', folder.id);
+    }
+    async function _hardDelete<T>(db: string, id: string): Promise<void> {
+        let future = new Deferred();
+        let trans = _db.transaction([db], "readwrite");
+        let store = trans.objectStore(db);
+        let request = store.delete(id);
+        request.onerror = (e) => { future.reject(`Error deleting ${id} from ${db}: ${e}`); };
+        request.onsuccess = () => { future.resolve(); };
+        await future;
     }
 }

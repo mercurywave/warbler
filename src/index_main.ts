@@ -126,7 +126,7 @@ function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
 
     let mnuNote = mkMoreMenu(flow, span);
     mkMoreMenuOpt(flow, mnuNote, "Delete Note", () => {
-        console.log("TODO:");
+        note.isDeleted = true;
     });
 }
 
@@ -146,7 +146,7 @@ function mkMoreMenu(flow: Flow, parent?: HTMLElement): HTMLSelectElement {
 function mkMoreMenuOpt(flow: Flow, select: HTMLSelectElement, lbl: string, onClick: () => void) {
     // note - this dumb hacky dropdown requires every element to have a unique name - can't fully bind options
     lbl = lbl + "\xA0\xA0\xA0\xA0"; // non-breaking spaces help the dumb hack look less janky
-    let btDelete = flow.elem<HTMLOptionElement>(select, "option", {
+    flow.elem<HTMLOptionElement>(select, "option", {
         className: "mnuOpt",
         textContent: lbl,
         value: lbl

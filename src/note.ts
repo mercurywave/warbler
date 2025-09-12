@@ -76,6 +76,13 @@ export class Note {
             Flow.Dirty();
         }
     }
+
+    public get isDeleted(): boolean { return this.data.deleted ?? false; }
+    public set isDeleted(value: boolean) {
+        this.data.deleted = value ? true : undefined;
+        this.FlagDirty();
+        Flow.Dirty();
+    }
 }
 
 export class PendingTranscription {
@@ -106,7 +113,7 @@ export class PendingTranscription {
         this._failureMsg = reason;
         Flow.Dirty();
     }
-    public Retry(){
+    public Retry() {
         this._failureMsg = null;
         Flow.Dirty();
     }

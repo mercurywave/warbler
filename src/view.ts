@@ -7,15 +7,23 @@ import { Nil } from "./util";
 export class ViewData {
     public type: eView;
     public settings: eSettingsPage = eSettingsPage.None;
-    public notes: Note[] = [];
+    public _notes: Note[] = [];
     private _fullResults: Note[] = [];
     public folder: Folder | Nil = null;
     public tag: string | Nil = null;
     public title: string = "";
     public isChron: boolean = false; // chronologically ordered
+    public showingDeleted: boolean = false;
 
     public constructor(type: eView) {
         this.type = type;
+    }
+
+    public get notes(): Note[] {
+        if(!this.showingDeleted){
+            this._notes = this._notes.filter(n => !n.isDeleted)
+        }
+        return this._notes;
     }
 
     public get canAddNotes(): boolean { return this.type != eView.Settings; }
@@ -28,7 +36,7 @@ export class ViewData {
         notes = notes.map(n => n.getChildNoteCluster()).flat();
         this.isChron = true;
         this._fullResults = notes;
-        this.notes = notes; // TODO: truncate
+        this._notes = notes; // TODO: truncate
     }
     public forceAdd(note: Note): boolean {
         if (this.notes.includes(note)) return false; // already added
@@ -44,7 +52,7 @@ export class ViewData {
         }
         // fallback for a bunch of cases is to just add to the end
         if (!this.notes.includes(note)) {
-            this.notes.push(note);
+            this._notes.push(note);
         }
         return true;
     }
