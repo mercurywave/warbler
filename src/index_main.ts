@@ -106,6 +106,14 @@ function mkNoteControl(flow: Flow, note: Note) {
     edit.addEventListener("focus", () => edit.spellcheck = true);
     edit.addEventListener("blur", () => edit.spellcheck = false);
 
+    flow.bindMail('noteFocus', m => m.data === note, () => {
+        edit.focus();
+    });
+
+    flow.bindMail('noteView', m => m.data === note, () => {
+        root.scrollIntoView();
+    });
+
     let recordings = flow.child("div");
     flow.bindArray(() => note._pendingAudio, Speech.mkRecordWidget, recordings);
 

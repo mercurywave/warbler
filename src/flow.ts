@@ -75,8 +75,8 @@ export class Flow {
     }
 
     // Mail is meant to be picked up. Dead letters log to console
-    public static SendMail(msg: Mail) {
-        __mail.push(msg);
+    public static SendMail(type: string, data?: any) {
+        __mail.push({ type, data });
         Flow.Dirty();
     }
 
@@ -93,7 +93,7 @@ export class Flow {
         // simple binding for common mail collection
         this.bind(() => {
             let found = Flow.searchMail(m => m.type === type && (!test || test(m)));
-            if(found){
+            if (found) {
                 onFound(found.data);
             }
         });
@@ -106,6 +106,7 @@ export class Flow {
     private _actions: (() => void)[] = [];
     private _cleanupActions: (() => void)[] = [];
     private _arrays: BoundList<any>[] = [];
+    public _dying: boolean = false;
 
     constructor(ancestor: Flow | null, root: HTMLElement | Nil, boundValue?: any) {
         this._ancestor = ancestor;
@@ -244,7 +245,7 @@ export class Flow {
 
     public get _isConnected(): boolean { return this._root?.isConnected ?? false };
     public _flow() {
-        if (!this._isConnected) { return; }
+        if (this._dying || !this._isConnected) { return; }
         for (const list of this._arrays) {
             list.sync();
         }
@@ -299,6 +300,10 @@ export class BoundList<T> {
             }
         }
         this.replaceChildrenPreserving(this.__container, children);
+        for (const flow of this.__bound) {
+            if (!goal.includes(flow))
+                flow._dying = true;
+        }
         this.__bound = goal;
     }
     private isInSync() {
