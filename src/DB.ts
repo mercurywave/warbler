@@ -65,7 +65,7 @@ export namespace DB {
         return await future;
     }
 
-    export function CreateNote(): Note {
+    export function CreateNote(folder?: Folder | Nil): Note {
         let now = new Date().toUTCString();
         let id = crypto.randomUUID();
         let inner: NoteData = {
@@ -84,6 +84,7 @@ export namespace DB {
             needsFileSave: false,
         }
         let note = new Note(meta);
+        if(folder) note.data.folderId = folder.id;
         _notes.push(note);
         return note;
     }

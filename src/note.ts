@@ -25,7 +25,7 @@ export class Note {
         this.FlagDirty();
     }
 
-    private get data(): NoteData { return this._meta.data }
+    public get data(): NoteData { return this._meta.data }
     public get id(): string { return this.data.id; }
 
     public get folderId(): string | Nil { return this.data.folderId; }

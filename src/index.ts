@@ -51,8 +51,7 @@ function mkRoot(flow: Flow) {
 }
 
 function spawnNote(startRecording?: boolean) {
-    let note = DB.CreateNote();
-    if (View.CurrView().folder) note.folderId = View.CurrView().folder?.id;
+    let note = DB.CreateNote(View.CurrView().folder);
     View.ForceAdd(note);
     if(startRecording) Flow.SendMail({type: 'autoRecord', data: note});
 }
