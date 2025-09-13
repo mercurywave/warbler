@@ -375,8 +375,9 @@ let __lastPageLoaded: string = "?";
 type RouteHandler = (flow: Flow, path: { [key: string]: string }) => void;
 type OnNavigateHandler = (path: { [key: string]: string }) => void;
 export class Route {
-    public static Register(page: string, handler: RouteHandler, onNavigate?: OnNavigateHandler, dflt?: boolean) {
-        let route = new Route(page, handler, onNavigate);
+    public static Register(page: string, handler: RouteHandler, onNavigate?: OnNavigateHandler,
+        onPreLoad?: () => Promise<void>, dflt?: boolean) {
+        let route = new Route(page, handler, onNavigate, onPreLoad);
         __allRoutes[page] = route;
         if (dflt) {
             if (__defaultRoute) throw 'double default register';
@@ -403,13 +404,13 @@ export class Route {
 
         Flow.SendSpam('Route.Launch');
         if (Route.updateUrl(path))
-            Route._onLaunch();
+            Route._asyncLaunch();
     }
 
     public static Init(){
         // initial page load counts as a launch for rendering
         Flow.SendSpam('Route.Launch');
-        Route._onLaunch();
+        Route._asyncLaunch();
     }
 
     public static OnNavigate() {
@@ -422,14 +423,20 @@ export class Route {
         if (__scrollHistory[url] !== undefined) {
             Flow.SendSpam('Route.Scroll', __scrollHistory[url] + 0);
         }
-        Route._onLaunch();
+        Route._asyncLaunch();
     }
-    static _onLaunch() {
+    static async _asyncLaunch(): Promise<void> {
+        let [route, path] = Route.getCurrRoute();
+        if(route._onPreLoad){
+            try{
+                await route._onPreLoad();
+            } catch(e) { console.error(e); }
+        }
+
         if (__boundScrollPane?.isConnected) {
             __scrollHistory[__lastPageLoaded] = __boundScrollPane.scrollTop;
         }
 
-        let [route, path] = Route.getCurrRoute();
         if (route._onNavigate) route._onNavigate(path);
         Flow.Dirty();
         __lastPageLoaded = Route.GetUniqPage();
@@ -469,11 +476,13 @@ export class Route {
     private _page: string;
     private _handler: RouteHandler;
     private _onNavigate?: OnNavigateHandler | Nil;
+    private _onPreLoad?: () => Promise<void>;
 
-    constructor(page: string, handler: RouteHandler, onNavigate?: OnNavigateHandler) {
+    constructor(page: string, handler: RouteHandler, onNavigate?: OnNavigateHandler, onPreLoad?: () => Promise<void>) {
         this._page = page;
         this._handler = handler;
         this._onNavigate = onNavigate;
+        this._onPreLoad = onPreLoad;
     }
     render(flow: Flow, path: { [key: string]: string }) {
         this._handler(flow, path);

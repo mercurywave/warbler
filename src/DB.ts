@@ -53,6 +53,12 @@ export namespace DB {
         }
     }
 
+    export async function ReloadIfChangedExternally() {
+        if(!__needsUpdate) return;
+        await LoadFolders();
+        await LoadNotes();
+    }
+
     async function loadHelper<T>(db: string): Promise<T[]> {
         let future = new Deferred<T[]>();
         let trans = _db.transaction(db, "readonly");
@@ -123,6 +129,7 @@ export namespace DB {
         request.onerror = (e) => { future.reject(`Error adding to ${db}: ${e}`); };
         request.onsuccess = () => { future.resolve(); };
         await future;
+        _setDbDirty();
     }
 
     export function AllNotes(): Note[] { return _notes.filter(n => !n.isDeleted); }
@@ -158,5 +165,24 @@ export namespace DB {
         request.onerror = (e) => { future.reject(`Error deleting ${id} from ${db}: ${e}`); };
         request.onsuccess = () => { future.resolve(); };
         await future;
+        _setDbDirty();
     }
+
+    
+}
+
+const UPDATE_KEY = "warbler-update-key";
+let __updateKey = localStorage.getItem(UPDATE_KEY);
+let __needsUpdate = false;
+window.addEventListener('storage', () => {
+    let newKey = localStorage.getItem(UPDATE_KEY);
+    if(newKey !== __updateKey)
+    {
+        __updateKey = newKey;
+        __needsUpdate = true;
+    }
+});
+function _setDbDirty(){
+    __updateKey = crypto.randomUUID();
+    localStorage.setItem(UPDATE_KEY, __updateKey);
 }

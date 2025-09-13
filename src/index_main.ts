@@ -56,17 +56,21 @@ function rendNotesList(flow: Flow) {
     bind.setAnimRemoval(200, "fade-out");
 }
 
+async function preLoadNotes(): Promise<void> {
+    await DB.ReloadIfChangedExternally();
+}
+
 Route.Register("all", (flow) => {
     rendNotesList(flow);
-}, () => View.ShowAll(), true);
+}, () => View.ShowAll(), preLoadNotes, true);
 
 Route.Register("unsorted", (flow) => {
     rendNotesList(flow);
-}, () => View.Unsorted());
+}, () => View.Unsorted(), preLoadNotes);
 
 Route.Register("recycle", (flow) => {
     rendNotesList(flow);
-}, () => View.Deleted());
+}, () => View.Deleted(), preLoadNotes);
 
 Route.Register("folder", (flow, pars) => {
     rendNotesList(flow);
@@ -76,7 +80,7 @@ Route.Register("folder", (flow, pars) => {
     else {
         View.Folder(folder);
     }
-});
+}, preLoadNotes);
 
 Route.Register("note", (flow, pars) => {
     rendNotesList(flow);
