@@ -23,6 +23,7 @@ function mkRoot(flow: Flow) {
     let outer = flow.elem(main, "div", { id: "mainOuter" });
     let bind = flow.bindObject(() => View.CurrView(), mkMain, outer);
     bind.setAnimRemoval(200, "fade-out-view");
+    flow.bindAsMainRouteScroll(outer);
 
     let actionCenter = flow.child("div", { className: "actionPanel" });
     flow.conditionalStyle(actionCenter, "noDisp", () => !View.CurrView().canAddNotes);
@@ -60,6 +61,6 @@ function spawnNote(startRecording?: boolean) {
 async function setup(): Promise<void> {
     LoadSettings();
     await DB.Init();
-    Route.OnNavigate();
+    Route.Init();
 }
 window.addEventListener('popstate', () => Route.OnNavigate());

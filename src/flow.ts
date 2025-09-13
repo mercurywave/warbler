@@ -55,9 +55,13 @@ export class Flow {
                 break;
             }
         }
-        let deadLetters = mail.filter(m => __mail.includes(m));
+        let deadLetters = mail.filter(m => !m.spam && __mail.includes(m));
         if (deadLetters.length) {
             console.error("Dead letter failed to deliver", deadLetters);
+        }
+        __mail = __mail.filter(m => !mail.includes(m));
+        if(__mail.length > 0 && !__scheduled){
+            console.error("mail spill", [...__mail]);
         }
         setTimeout(() => {
             Flow.Cleanup();
@@ -79,6 +83,11 @@ export class Flow {
         __mail.push({ type, data });
         Flow.Dirty();
     }
+    // Spam is just sent to everyone. Who cares if it's actually read
+    public static SendSpam(type: string, data?: any) {
+        __mail.push({ spam: true, type, data });
+        Flow.Dirty();
+    }
 
     public static getAllMail(): Mail[] { return [...__mail]; }
     public static searchMail(test: (m: Mail) => boolean): Mail | Nil {
@@ -87,7 +96,8 @@ export class Flow {
         return found;
     }
     public static readMail(mail: Mail) {
-        __mail = __mail.filter(m => m != mail);
+        if (!mail.spam)
+            __mail = __mail.filter(m => m != mail);
     }
     public bindMail(type: string, test: ((m: Mail) => boolean) | Nil, onFound: (data: any) => void) {
         // simple binding for common mail collection
@@ -238,6 +248,11 @@ export class Flow {
         });
     }
 
+    public bindAsMainRouteScroll(host: HTMLElement) {
+        // should only bind a single element on the page as the primary scroll pane to restore scrolling to
+        Route.BindElemScrollPos(this, host);
+    }
+
     public unwind(handler: () => void) {
         // calls handler when this router is destroyed
         this._cleanupActions.push(handler);
@@ -354,6 +369,9 @@ export class BoundList<T> {
 // the key 'page' is used for main navigation
 let __allRoutes: { [page: string]: Route } = {};
 let __defaultRoute: Route;
+let __scrollHistory: { [key: string]: number } = {};
+let __boundScrollPane: HTMLElement | Nil = null;
+let __lastPageLoaded: string = "?";
 type RouteHandler = (flow: Flow, path: { [key: string]: string }) => void;
 type OnNavigateHandler = (path: { [key: string]: string }) => void;
 export class Route {
@@ -369,6 +387,7 @@ export class Route {
     public static LaunchHome() {
         Route._launch();
     }
+
     public static Launch(page: string, path?: { [key: string]: string }) {
         let route = __allRoutes[page];
         if (!route) throw `page does not exist ${page}`;
@@ -377,11 +396,46 @@ export class Route {
     static _launch(page?: string, path?: { [key: string]: string }) {
         path ??= {};
         if (page) path['page'] = page;
+
+        let url = Route.toUrl(path);
+        if (__scrollHistory[url])
+            delete __scrollHistory[url];
+
+        Flow.SendSpam('Route.Launch');
         if (Route.updateUrl(path))
-            Route.OnNavigate();
+            Route._onLaunch();
     }
 
-    public static GetUniqPage(): string { return window.location.search; }
+    public static Init(){
+        // initial page load counts as a launch for rendering
+        Flow.SendSpam('Route.Launch');
+        Route._onLaunch();
+    }
+
+    public static OnNavigate() {
+        Flow.SendSpam('Route.Navigate');
+        Route._onNavigate();
+    }
+
+    static _onNavigate(){
+        let url = Route.GetUniqPage();
+        if (__scrollHistory[url] !== undefined) {
+            Flow.SendSpam('Route.Scroll', __scrollHistory[url] + 0);
+        }
+        Route._onLaunch();
+    }
+    static _onLaunch() {
+        if (__boundScrollPane?.isConnected) {
+            __scrollHistory[__lastPageLoaded] = __boundScrollPane.scrollTop;
+        }
+
+        let [route, path] = Route.getCurrRoute();
+        if (route._onNavigate) route._onNavigate(path);
+        Flow.Dirty();
+        __lastPageLoaded = Route.GetUniqPage();
+    }
+
+    public static GetUniqPage(): string { return new URLSearchParams(window.location.search).toString(); }
 
     static getCurrRoute(): [Route, path: { [key: string]: string }] {
         let path = this.parseUrl();
@@ -391,21 +445,24 @@ export class Route {
         return [route, path];
     }
 
-    public static OnNavigate() {
-        let [route, path] = Route.getCurrRoute();
-        if (route._onNavigate) route._onNavigate(path);
-        Flow.Dirty();
-    }
-
     public static Render(flow: Flow) {
         let [route, path] = Route.getCurrRoute();
         route.render(flow, path);
     }
 
     public static ErrorFallback() {
-        console.trace(`falling back to default route from URL ${window.location.search} `);
+        console.trace(`falling back to default route from URL ${Route.GetUniqPage()} `);
         Route.updateUrl({});
         Flow.Dirty();
+    }
+
+    public static BindElemScrollPos(flow: Flow, host: HTMLElement) {
+        // this assumes you effectively only have one main activity control that represents a route
+        __boundScrollPane = host;
+        flow.bindMail('Route.Scroll', null, (m) => {
+            host.scrollTop = m;
+            setTimeout(() => host.scrollTop = m);
+        });
     }
 
 
@@ -423,16 +480,18 @@ export class Route {
     }
 
 
-
-    static updateUrl(path: { [key: string]: string }): boolean {
-        const url = new URL(window.location.href);
+    static toUrl(path: { [key: string]: string }): string {
         const params = new URLSearchParams();
-        const oldParams = new URLSearchParams(window.location.search);
         for (const [key, value] of Object.entries(path)) {
             params.set(key, value);
         }
-        let target = params.toString();
-        if (oldParams.toString() == target)
+        return params.toString();
+    }
+
+    static updateUrl(path: { [key: string]: string }): boolean {
+        let target = Route.toUrl(path);
+        const url = new URL(window.location.href);
+        if (Route.GetUniqPage() == target)
             return false;
         url.search = target;
         history.pushState(null, '', url.toString());
@@ -453,4 +512,5 @@ export class Route {
 export interface Mail {
     type: string;
     data?: any;
+    spam?: boolean;
 }

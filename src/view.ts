@@ -36,8 +36,6 @@ export class ViewData {
         this.isChron = true;
         this._fullResults = notes;
         this._notes = notes; // TODO: truncate
-        if (notes.length > 0) // scroll to last note
-            Flow.SendMail('noteView', notes[notes.length - 1]);
     }
     public forceAdd(note: Note): boolean {
         if (this.notes.includes(note)) return false; // already added

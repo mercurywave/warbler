@@ -16,7 +16,11 @@ export function mkMain(flow: Flow, view: ViewData) {
     // this snapshots the route at time of construction, because we manage this via views at parent level
     flow.routePage(viewContainer, Route.GetUniqPage());
 
-    flow.child("div", { className: "scrollPad" })
+    let pad = flow.child("div", { className: "scrollPad" });
+    flow.bindMail('Route.Launch', null, () => {
+        requestAnimationFrame(() => pad.scrollIntoView())
+        pad.scrollIntoView();
+    });
 }
 
 function mkViewHeader(flow: Flow) {
