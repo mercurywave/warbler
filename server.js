@@ -1,6 +1,10 @@
+require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const path = require('path');
+const multer = require('multer');
+const upload = multer();
+const FormData = require('form-data');
 
 const app = express();
 const PORT = process.env.PORT || 6464;
@@ -19,14 +23,15 @@ app.get('/config', (req, res) => {
     });
 });
 
-app.post('/v1/asr', async (req, res) => {
+app.post('/v1/asr', upload.single('audio_file'), async (req, res) => {
     let type = process.env.ASR_TYPE;
     let baseUrl = process.env.ASR_URL;
-    if (type == '') {
+    checkCors(res);
+    if (!type) {
         res.status(501).json({ error: 'ASR_TYPE not configured' });
         return;
     }
-    if (baseUrl == '') {
+    if (!baseUrl) {
         res.status(502).json({ error: 'ASR_URL not configured' });
         return;
     }
@@ -35,10 +40,13 @@ app.post('/v1/asr', async (req, res) => {
         let url = appendPathToUrl(baseUrl, 'asr');
         url.search = 'output=json';
         try {
-            const { userInput } = req.body;
+            const audioBuffer = req.file.buffer;
+            const originalName = req.file.originalname;
+            const formData = new FormData();
+            formData.append('audio_file', audioBuffer, originalName);
 
-            const response = await axios.post(url, {
-                data: userInput
+            const response = await axios.post(url, formData, {
+                headers: formData.getHeaders(),
             });
 
             res.status(200).json(response.data);
@@ -47,7 +55,6 @@ app.post('/v1/asr', async (req, res) => {
             console.error('Error making external call:', error.message);
             res.status(500).json({ error: error.message });
         }
-        checkCors(res);
     }
     else {
         res.status(501).json({ error: 'Invalid ASR_TYPE' });

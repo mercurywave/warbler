@@ -1,6 +1,8 @@
 services:
   warbler:
     image: warbler
+    env_file:
+      - .env
     build:
       context: .
       dockerfile: ./Dockerfile
