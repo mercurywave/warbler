@@ -1,0 +1,10 @@
+services:
+  warbler:
+    image: warbler
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    ports:
+      - 6464:6464

@@ -47,7 +47,7 @@ jobs:
       - name: upload artifacts
         uses: actions/upload-pages-artifact@v3
         with: 
-          path: "."
+          path: "./dist"
 
       - name: deploy
         id: deployment
