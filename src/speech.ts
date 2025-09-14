@@ -100,6 +100,9 @@ export namespace Speech {
                 case 'WhisperAsr':
                     addition = await runWhisperAsr(blob);
                     break;
+                case 'Warbler':
+                    addition = await runWarblerAsr(blob);
+                    break;
                 default: throw 'audio type not implemented'
             }
             trans.Complete(addition);
@@ -123,11 +126,18 @@ export namespace Speech {
 }
 
 async function runWhisperAsr(blob: Blob): Promise<string> {
+    return await _runSimpleAsr(blob, true);
+}
+
+async function runWarblerAsr(blob: Blob): Promise<string> {
+    return await _runSimpleAsr(blob);
+}
+
+async function _runSimpleAsr(blob: Blob, isWhisper?: boolean): Promise<string> {
     let baseUrl = Speech.audioUrl();
-    if (!baseUrl) throw 'URL is required for WhisperAsr';
-    let url = new URL(baseUrl);
-    url.pathname += '/asr';
-    url.search = 'output=json';
+    if (!baseUrl) throw 'URL is required for Asr';
+    let url = util.appendPathToUrl(baseUrl, isWhisper ? 'asr' : 'v1/asr');
+    if (isWhisper) url.search = 'output=json';
     try {
         const formData = new FormData();
         formData.append('audio_file', blob, 'recorded_audio.wav');

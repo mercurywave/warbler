@@ -52,9 +52,9 @@ export namespace util {
         return rtf.format(0, 'second');
     }
 
-    export function UUID() {
+    export function UUID(): string {
         // only available in HTTPS
-        if(typeof crypto?.randomUUID === 'function')
+        if (typeof crypto?.randomUUID === 'function')
             return crypto.randomUUID();
 
         // you're not banking with this - it's fine
@@ -65,6 +65,13 @@ export namespace util {
         });
     }
 
+    export function appendPathToUrl(base: string, segment: string): URL {
+        const url = new URL(base);
+        if(segment.startsWith('/')) segment = segment.substring(1);
+        // Ensure no double slashes or missing slashes
+        url.pathname = `${url.pathname.replace(/\/$/, '')}/${segment}`;
+        return url;
+    }
 
 }
 

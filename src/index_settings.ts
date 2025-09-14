@@ -112,6 +112,13 @@ function mkTranscription(flow: Flow) {
 let _audioPipelines: IService[] = [
     { name: "Disabled" },
     {
+        name: "Warbler-Container",
+        key: "Warbler",
+        description: `
+            Connect to a Warbler backend server.
+        `.trim(),
+    },
+    {
         name: "Whisper-ASR",
         key: "WhisperAsr",
         description: `
@@ -228,7 +235,7 @@ function mkAiConfig(flow: Flow, aiFunction: IAIFunction) {
         v => aiFunction.systemPrompt = v,
         container
     )
-    
+
     flow.conditionalStyle(container, "noDisp", () => server.value === "");
 }
 
