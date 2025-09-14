@@ -1,4 +1,6 @@
 require('dotenv').config();
+const fs = require('fs');
+const https = require('https');
 const express = require('express');
 const axios = require('axios');
 const path = require('path');
@@ -69,8 +71,12 @@ function checkCors(res) {
     }
 }
 
+const serverOptions = {
+    cert: fs.readFileSync('/certs/cert.pem'),
+    key: fs.readFileSync('/certs/key.pem'),
+};
 
-app.listen(PORT, () => {
+https.createServer(serverOptions, app).listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
 

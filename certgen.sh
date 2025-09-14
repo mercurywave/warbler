@@ -1,3 +1,6 @@
+#!/bin/sh
+set -e
+
 CERT_DIR=/certs
 CERT_PATH="$CERT_DIR/cert.pem"
 KEY_PATH="$CERT_DIR/key.pem"
@@ -5,6 +8,7 @@ KEY_PATH="$CERT_DIR/key.pem"
 mkdir -p "$CERT_DIR"
 
 # Check if cert exists and is still valid
+echo "Checking for certificate"
 if [ ! -f "$CERT_PATH" ] || ! openssl x509 -checkend $((30*24*60*60)) -noout -in "$CERT_PATH"; then
   echo "Generating new self-signed certificate..."
   openssl req -x509 -newkey rsa:4096 -nodes \
@@ -13,5 +17,4 @@ if [ ! -f "$CERT_PATH" ] || ! openssl x509 -checkend $((30*24*60*60)) -noout -in
 else
   echo "Existing certificate is still valid."
 fi
-
-node server.js
+echo "Certificates updated"

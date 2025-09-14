@@ -13,8 +13,11 @@ ENV NODE_ENV=production
 WORKDIR /usr/src/app
 COPY --from=build /usr/src/app/package.json ./
 COPY --from=build /usr/src/app/server.js ./
+COPY --from=build /usr/src/app/certgen.sh ./
 COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist
 EXPOSE 6464
+RUN mkdir -p /certs && chown node:node /certs
 USER node
-CMD ["sh", "run.sh"]
+RUN ["sh", "certgen.sh"]
+CMD ["node", "server.js"]
