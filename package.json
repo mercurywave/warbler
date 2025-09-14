@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "tsc": "tsc",
-    "build": "webpack",
+    "build": "webpack && node static-copy.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npm run build && webpack serve --open",
     "watch": "npm run build && webpack --watch",
