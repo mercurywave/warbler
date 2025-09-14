@@ -19,5 +19,7 @@ COPY --from=build /usr/src/app/dist ./dist
 EXPOSE 6464
 RUN mkdir -p /certs && chown node:node /certs
 USER node
-RUN ["sh", "certgen.sh"]
+RUN if [ -z "$ENABLE_HTTPS" ]; then \
+        sh "certgen.sh"; \ 
+    fi
 CMD ["node", "server.js"]

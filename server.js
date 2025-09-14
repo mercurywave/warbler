@@ -71,14 +71,20 @@ function checkCors(res) {
     }
 }
 
-const serverOptions = {
-    cert: fs.readFileSync('/certs/cert.pem'),
-    key: fs.readFileSync('/certs/key.pem'),
-};
-
-https.createServer(serverOptions, app).listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+if (process.env.ENABLE_HTTPS) {
+    const serverOptions = {
+        cert: fs.readFileSync('/certs/cert.pem'),
+        key: fs.readFileSync('/certs/key.pem'),
+    };
+    https.createServer(serverOptions, app).listen(PORT, () => {
+        console.log(`Server running on https://localhost:${PORT}`);
+    });
+}
+else {
+    app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+    });
+}
 
 
 function appendPathToUrl(base, segment) {
