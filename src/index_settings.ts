@@ -1,6 +1,6 @@
 import { AILinkage } from "./ai_link";
 import { Flow, Route } from "./flow";
-import { Nil } from "./util";
+import { Nil, util } from "./util";
 import { eSettingsPage, View } from "./view";
 
 export interface ISettings {
@@ -149,7 +149,7 @@ function mkLlmServers(flow: Flow) {
         className: "btSetting",
     });
     btAddServer.addEventListener("click", () => {
-        let id = crypto.randomUUID();
+        let id = util.UUID();
         _config.llmServers.push({ id: id, type: _llmPipelines[0].key ?? "", url: "" });
         Flow.Dirty();
     });

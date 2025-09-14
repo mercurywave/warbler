@@ -1,6 +1,6 @@
 import { Folder, FolderData } from "./folder";
 import { Note, NoteData, NoteMeta } from "./note";
-import { Deferred, Nil } from "./util";
+import { Deferred, Nil, util } from "./util";
 
 export namespace DB {
     let _db: IDBDatabase;
@@ -73,7 +73,7 @@ export namespace DB {
 
     export function CreateNote(folder?: Folder | Nil): Note {
         let now = new Date().toUTCString();
-        let id = crypto.randomUUID();
+        let id = util.UUID();
         let inner: NoteData = {
             childrenIds: [],
             creationUtc: now,
@@ -97,7 +97,7 @@ export namespace DB {
 
     export function CreateFolder(): Folder {
         let now = new Date().toUTCString();
-        let id = crypto.randomUUID();
+        let id = util.UUID();
         let inner: FolderData = {
             id: id,
             title: "",
@@ -183,6 +183,6 @@ window.addEventListener('storage', () => {
     }
 });
 function _setDbDirty(){
-    __updateKey = crypto.randomUUID();
+    __updateKey = util.UUID();
     localStorage.setItem(UPDATE_KEY, __updateKey);
 }

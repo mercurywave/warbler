@@ -11,8 +11,8 @@ export namespace util {
         return text;
     }
 
-    export function appendPiece(text:string, delim:string, append:string): string{
-        if(text == "") return append;
+    export function appendPiece(text: string, delim: string, append: string): string {
+        if (text == "") return append;
         return text + delim + append;
     }
 
@@ -51,6 +51,20 @@ export namespace util {
         }
         return rtf.format(0, 'second');
     }
+
+    export function UUID() {
+        // only available in HTTPS
+        if(typeof crypto?.randomUUID === 'function')
+            return crypto.randomUUID();
+
+        // you're not banking with this - it's fine
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
 
 }
 
@@ -96,13 +110,13 @@ export class Deferred<T> implements Promise<T> {
 
 
 export class Broadcaster<T> {
-    private _listeners: ((e:T) => void)[] = [];
-    
-    public hook(callback:(e:T) => void){
+    private _listeners: ((e: T) => void)[] = [];
+
+    public hook(callback: (e: T) => void) {
         this._listeners.push(callback);
     }
 
-    public trigger(ev: T){
+    public trigger(ev: T) {
         for (const callback of [...this._listeners]) {
             callback(ev);
         }
