@@ -57,7 +57,7 @@ export async function LoadSettings(): Promise<void> {
         CleanSettings();
     } catch { ResetSettings(); }
     else ResetSettings();
-    if(!await tryPullFromBackend(true))
+    if (!await tryPullFromBackend(true))
         _isStaticWebPage = true;
 }
 function CleanSettings() {
@@ -87,17 +87,17 @@ function SaveSettings() {
     window.localStorage.setItem("warbler-settings", JSON.stringify(_config));
     Flow.Dirty();
 }
-function getBackendUrl(defaultToUrl?: boolean): string | Nil{
-    if(_config.backendOverride)
+function getBackendUrl(defaultToUrl?: boolean): string | Nil {
+    if (_config.backendOverride)
         return _config.backendOverride;
-    if(!_isStaticWebPage || defaultToUrl)
+    if (!_isStaticWebPage || defaultToUrl)
         return window.location.origin + window.location.pathname;
     return null;
 }
 async function tryPullFromBackend(defaultToUrl?: boolean): Promise<boolean> {
     _backendFuncs = null;
     let url = getBackendUrl(defaultToUrl);
-    if(!url) return false;
+    if (!url) return false;
     let result = await Rest.get(url, "v1/config");
     if (result.success) {
         _backendFuncs = result.response!!;
@@ -123,12 +123,40 @@ export function mkSettings(flow: Flow, subPage: string) {
 }
 
 function mkMain(flow: Flow) {
+    addSection(flow, "Database", mkSyncServer);
     addSection(flow, "Transcription", mkTranscription);
     addSection(flow, "LLM Servers", mkLlmServers);
     let aiContainer = flow.child("div");
     addSection(flow, "AI Summary", f => mkAiConfig(f, _config.summaryAi), aiContainer);
     addSection(flow, "AI Transcribe Filter", f => mkAiConfig(f, _config.cleanAudioAi), aiContainer);
     flow.conditionalStyle(aiContainer, "noDisp", () => _config.llmServers.length < 1);
+}
+
+function mkSyncServer(flow: Flow) {
+    lbl(flow, "Status:");
+    let stats = boundDescription(flow, () => _backendFuncs ? `Online` : `Offline`);
+    flow.conditionalStyle(stats, "setErr", () => !_backendFuncs);
+
+    boundDescription(flow, () => _isStaticWebPage ? `
+        You're connected to a static web page with no back end.
+        You can connect to back end server independently 
+        to synchronize your data and route AI connections.
+    `.trim() : '');
+    
+    let url = flow.child("div");
+    flow.conditional(url, () => _isStaticWebPage || !!_config.backendOverride, mkBackendUrl);
+}
+
+function mkBackendUrl(flow: Flow) {
+    lbl(flow, "Server URL:");
+    boundTextInput(flow,
+        () => _config.backendOverride ?? "",
+        v => {
+            // TODO: This needs to be bigger deal
+            // If you have local unsynced notes, you need to be able to select what to do
+            _config.backendOverride = v
+        },
+    );
 }
 
 function mkTranscription(flow: Flow) {
@@ -341,8 +369,9 @@ function addSection(flow: Flow, label: string, builder: (flow: Flow) => void, ho
     flow.bindCtl(builder, section);
 }
 
-function boundDescription(flow: Flow, getter: () => (string | Nil), parent?: HTMLElement) {
+function boundDescription(flow: Flow, getter: () => (string | Nil), parent?: HTMLElement): HTMLElement {
     let container = flow.elem(parent, "div", { className: "settingDescription" });
     flow.bind(() => container.innerHTML = getter() ?? "");
     flow.conditionalStyle(container, "noDisp", () => getter() == "");
+    return container;
 }

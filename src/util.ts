@@ -76,8 +76,8 @@ export namespace util {
 }
 
 export namespace Rest{
-    export async function get<T>(baseUrl: string, path: string): Promise<IResult<T>> {
-        if(!baseUrl) return result(false, 'URL is required');
+    export async function get<T>(baseUrl: string, path: string): Promise<OResult<T>> {
+        if(!baseUrl) return new OResult(false, 'URL is required');
         let url = util.appendPathToUrl(baseUrl, path);
         try {
             const response = await fetch(url, {
@@ -86,25 +86,27 @@ export namespace Rest{
 
             if (response.ok) {
                 const result = await response.json();
-                return result(true, undefined, result as any);
+                return new OResult(true, undefined, result as any);
             } else {
                 console.error('Failed:', response.status, response.statusText);
-                return result(false, `Error: ${response.status} ${response.statusText}`);
+                return new OResult(false, `Error: ${response.status} ${response.statusText}`);
             }
         } catch (error) {
             console.error('Error:', error);
-            return result(false, `Error: ${error}`);
+            return new OResult(false, `Error: ${error}`);
         }
         
     }
 }
-function result<T>(success: boolean, error?:string, response?: T): IResult<T>{
-    return { success, error, response };
-}
-export interface IResult<T>{
+export class OResult<T>{
     success: boolean;
     error?: string;
     response?: T;
+    public constructor(success: boolean, error?:string, response?: T){
+        this.success = success;
+        this.error = error;
+        this.response = response;
+    }
 }
 
 export class Deferred<T> implements Promise<T> {

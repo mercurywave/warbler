@@ -19,6 +19,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/v1/config', (req, res) => {
+    checkCors(res);
     let type = process.env.ASR_TYPE;
     res.status(200).json({
         ASR: (type != ""),
