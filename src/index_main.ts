@@ -1,7 +1,6 @@
 import { DB } from "./DB";
 import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
-import { mkSettings } from "./index_settings";
 import { Note } from "./note";
 import { Speech } from "./speech";
 import { util } from "./util";

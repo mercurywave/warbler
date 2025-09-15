@@ -1,119 +1,35 @@
 import { AILinkage } from "./ai_link";
 import { Flow, Route } from "./flow";
-import { Rest, Nil, util, Deferred } from "./util";
+import { Config, IAIFunction, ILlmServer, IService } from "./settings";
+import { Nil, util } from "./util";
 import { eSettingsPage, View } from "./view";
 
-export interface ISettings {
-    v: number;
-    transcriptType?: string | Nil;
-    transcriptUrl?: string | Nil;
-    llmServers: ILlmServer[];
 
-    summaryAi: IAIFunction;
-    cleanAudioAi: IAIFunction;
-
-    backendOverride?: string;
-}
-
-export interface ILlmServer {
-    id: string;
-    type: string;
-    url?: string;
-    alias?: string;
-}
-
-export interface IAIFunction {
-    serverKey?: string;
-    model?: string;
-    systemPrompt?: string;
-}
-
-export interface IBackendFunctions {
-    ASR?: boolean;
-}
-
-interface IService {
-    name: string;
-    key?: string;
-    description?: string;
-}
 type Option = [value: string, display: string];
 
 function serverToOption(svc: IService): Option {
     return [svc.key ?? "", svc.name];
 }
-function loopConfigedAiFunctions(): IAIFunction[] {
-    return [_config.summaryAi, _config.summaryAi];
+
+// this lives here to make sure webpack pulls this file in
+export function mkSettingsLauncher(flow: Flow) {
+    let btSettings = flow.child<HTMLButtonElement>("button", {
+        id: "btSettings",
+        type: "button",
+        innerText: "Settings",
+        className: "btNavigate",
+    });
+    btSettings.addEventListener("click", () => {
+        Route.Launch("settings");
+    });
 }
 
-let _config: ISettings;
-let _isStaticWebPage: boolean = false;
-let _backendFuncs: IBackendFunctions | Nil = null;
-let _pollBackendJob: Deferred<boolean> | Nil = null;
-export function Config(): ISettings { return _config; }
-export async function LoadSettings(): Promise<void> {
-    let str = window.localStorage.getItem("warbler-settings");
-    if (str) try {
-        _config = JSON.parse(str);
-        CleanSettings();
-    } catch { ResetSettings(); }
-    else ResetSettings();
-    if (!await tryPullFromBackend(true))
-        _isStaticWebPage = true;
-}
-function CleanSettings() {
-    if (!_config.llmServers) _config.llmServers = []; // TODO: remove backwards compatability break
-    if (!_config.summaryAi) _config.summaryAi = {};
-    if (!_config.cleanAudioAi) _config.cleanAudioAi = {};
-
-    // ignore invalid options
-    _config.llmServers = _config.llmServers.filter(s => _llmPipelines.find(p => p.key === s.type));
-
-    // force-create servers if something gets unlinked
-    for (const aiFunc of loopConfigedAiFunctions()) {
-        if (aiFunc.serverKey && !_config.llmServers.find(s => s.id === aiFunc.serverKey)) {
-            _config.llmServers.push({ id: aiFunc.serverKey, type: _llmPipelines[0].key ?? "", alias: "???" });
-        }
-    }
-}
-function ResetSettings() {
-    _config = {
-        v: 1,
-        llmServers: [],
-        summaryAi: {},
-        cleanAudioAi: {},
-    };
-}
-function SaveSettings() {
-    window.localStorage.setItem("warbler-settings", JSON.stringify(_config));
-    Flow.Dirty();
-}
-function getBackendUrl(defaultToUrl?: boolean): string | Nil {
-    if (_config.backendOverride)
-        return _config.backendOverride;
-    if (!_isStaticWebPage || defaultToUrl)
-        return window.location.origin + window.location.pathname;
-    return null;
-}
-async function tryPullFromBackend(defaultToUrl?: boolean): Promise<boolean> {
-    if (_pollBackendJob != null) return await _pollBackendJob;
-    _backendFuncs = null;
-    _pollBackendJob = new Deferred();
-    let url = getBackendUrl(defaultToUrl);
-    if (!url) return false;
-    let result = await Rest.get(url, "v1/config");
-    if (result.success) {
-        _backendFuncs = result.response!!;
-    }
-    _pollBackendJob.resolve(result.success);
-    _pollBackendJob = null;
-    return result.success;
-}
 
 Route.Register("settings", (flow, pars) => {
     mkSettings(flow, pars["sub"]);
 }, pars => View.Settings(parseSettings(pars["sub"])),
-    async () => { await tryPullFromBackend() });
+    async () => { await Config.tryPullFromBackend() });
+
 
 function parseSettings(subPage: string): eSettingsPage {
     if (subPage?.toLowerCase() === "main") return eSettingsPage.Main;
@@ -132,85 +48,64 @@ function mkMain(flow: Flow) {
     addSection(flow, "Transcription", mkTranscription);
     addSection(flow, "LLM Servers", mkLlmServers);
     let aiContainer = flow.child("div");
-    addSection(flow, "AI Summary", f => mkAiConfig(f, _config.summaryAi), aiContainer);
-    addSection(flow, "AI Transcribe Filter", f => mkAiConfig(f, _config.cleanAudioAi), aiContainer);
-    flow.conditionalStyle(aiContainer, "noDisp", () => _config.llmServers.length < 1);
+    addSection(flow, "AI Summary", f => mkAiConfig(f, Config.getSummaryAi()), aiContainer);
+    addSection(flow, "AI Transcribe Filter", f => mkAiConfig(f, Config.getCleanAudioAi()), aiContainer);
+    flow.conditionalStyle(aiContainer, "noDisp", () => Config.getllmServers().length < 1);
 }
 
 function mkSyncServer(flow: Flow) {
     lbl(flow, "Status:");
-    let stats = boundDescription(flow, () => _backendFuncs ? `Online` : `Offline`);
-    flow.conditionalStyle(stats, "setErr", () => !_backendFuncs);
+    let stats = boundDescription(flow, () => Config.isOnline() ? `Online` : `Offline`);
+    flow.conditionalStyle(stats, "setErr", () => !Config.isOnline());
 
-    boundDescription(flow, () => _isStaticWebPage ? `
+    boundDescription(flow, () => Config.isStaticWebPage() ? `
         You're connected to a static web page with no back end.
         You can connect to back end server independently 
         to synchronize your data and route AI connections.
     `.trim() : '');
 
     let url = flow.child("div");
-    flow.conditional(url, () => _isStaticWebPage || !!_config.backendOverride, mkBackendUrl);
+    flow.conditional(url, () => Config.isStaticWebPage() || Config.isOnline(), mkBackendUrl);
 }
 
 function mkBackendUrl(flow: Flow) {
     lbl(flow, "Server URL:");
-    let container = flow.child("div", {className: "setRow"});
+    let container = flow.child("div", { className: "setRow" });
     let input = boundTextInput(flow,
-        () => _config.backendOverride ?? "",
+        () => Config.getBackendOverride() ?? "",
         v => {
             // TODO: This needs to be bigger deal
             // If you have local unsynced notes, you need to be able to select what to do
-            _config.backendOverride = v;
-            tryPullFromBackend().then(() => Flow.Dirty());
+            Config.setBackendOverride(v);
+            Config.tryPullFromBackend()
+                .then(() => Flow.Dirty());
         }, container
     );
-    flow.bind(() => input.disabled = _pollBackendJob != null);
-    boundSpan(flow, () => _pollBackendJob ? 'Testing connection...' : '', container);
+    flow.bind(() => input.disabled = Config.isCheckingOnlineStatus());
+    boundSpan(flow, () => Config.isCheckingOnlineStatus() ? 'Testing connection...' : '', container);
 }
 
 function mkTranscription(flow: Flow) {
     mkTranscriptMode(flow);
     let url = flow.child("div");
-    flow.conditional(url, () => !!_config.transcriptType, mkTranscriptUrl);
+    flow.conditional(url, () => !!Config.getTranscriptType(), mkTranscriptUrl);
 }
-
-let _audioPipelines: IService[] = [
-    { name: "Disabled" },
-    {
-        name: "Warbler-Container",
-        key: "Warbler",
-        description: `
-            Connect to a Warbler backend server.
-        `.trim(),
-    },
-    {
-        name: "Whisper-ASR",
-        key: "WhisperAsr",
-        description: `
-            Whisper-ASR you to point to an <a href="https://github.com/ahmetoner/whisper-asr-webservice">
-            openai-whisper-asr-webservice</a> end point. NOTE: With a default 
-            <a href="https://hub.docker.com/r/onerahmet/openai-whisper-asr-webservice">Docker install</a>,
-            locally, you will likely need a reverse proxy to override the CORS headers, as this is invoked
-            from the front end. The URL should be the base URL, and the /asr will be appeneded automatically.
-        `.trim(),
-    },
-];
 
 function mkTranscriptMode(flow: Flow) {
     lbl(flow, "Transcription Service:");
-    let opts: Option[] = _audioPipelines.map(serverToOption);
+    let opts: Option[] = Config.audioPipelines.map(serverToOption);
     addDropDown(flow, opts,
-        () => _config.transcriptType ?? "",
-        v => _config.transcriptType = v,
+        () => Config.getTranscriptType() ?? "",
+        v => Config.setTranscriptType(v),
     );
-    boundDescription(flow, () => _audioPipelines.find(a => a.key == _config.transcriptType)?.description);
+    boundDescription(flow, () => Config.audioPipelines.find(a => a.key == Config.getTranscriptType())?.description);
 }
 
 function mkTranscriptUrl(flow: Flow) {
     lbl(flow, "URL:");
     boundTextInput(flow,
-        () => _config.transcriptUrl ?? "",
-        v => _config.transcriptUrl = v,
+        () => Config.getTranscriptUrl() ?? "",
+        v => Config.setTranscriptUrl(v),
     );
 }
 
@@ -222,26 +117,16 @@ function mkLlmServers(flow: Flow) {
     });
     btAddServer.addEventListener("click", () => {
         let id = util.UUID();
-        _config.llmServers.push({ id: id, type: _llmPipelines[0].key ?? "", url: "" });
+        Config.getllmServers().push({ id: id, type: Config.llmPipelines[0].key ?? "", url: "" });
         Flow.Dirty();
     });
     let elList = flow.child("div", { className: "liSetServers" });
-    flow.bindArray(() => _config.llmServers, mkLlmLine, elList);
+    flow.bindArray(() => Config.getllmServers(), mkLlmLine, elList);
 }
-
-let _llmPipelines: IService[] = [
-    {
-        name: "Ollama",
-        key: "Ollama",
-        description: `
-            Ollama server. You may need to consider CORS to enable access
-        `.trim(),
-    },
-];
 
 function mkLlmLine(flow: Flow, server: ILlmServer) {
     let span = flow.root("div", { className: "setServer" });
-    let opts: Option[] = _llmPipelines.map(serverToOption);
+    let opts: Option[] = Config.llmPipelines.map(serverToOption);
     addDropDown(flow, opts,
         () => server.type ?? "",
         v => server.type = v,
@@ -260,12 +145,12 @@ function mkLlmLine(flow: Flow, server: ILlmServer) {
         className: "btX",
     });
     btRemove.addEventListener("click", () => {
-        _config.llmServers = _config.llmServers.filter(s => s !== server);
-        SaveSettings();
+        Config.setllmServers(Config.getllmServers().filter(s => s !== server));
+        Config.Save();
         Flow.Dirty();
     });
     flow.bind(() => {
-        btRemove.disabled = !!loopConfigedAiFunctions().find(c => c.serverKey === server.id);
+        btRemove.disabled = !!Config.loopConfigedAiFunctions().find(c => c.serverKey === server.id);
     });
 
     let bttest = flow.child<HTMLButtonElement>("button", {
@@ -287,7 +172,7 @@ function getServerName(server: ILlmServer): string {
 function mkAiConfig(flow: Flow, aiFunction: IAIFunction) {
     lbl(flow, "LLM Server:");
     let server = addBoundDropDown(flow,
-        () => [["", ""], ..._config.llmServers.map(s => [s.id, getServerName(s)] as Option)],
+        () => [["", ""], ...Config.getllmServers().map(s => [s.id, getServerName(s)] as Option)],
         () => aiFunction.serverKey ?? "",
         v => aiFunction.serverKey = v,
     );
@@ -322,7 +207,7 @@ function boundTextInput(flow: Flow, getter: () => string, setter: (val: string) 
     });
     input.addEventListener("change", () => {
         setter(input.value);
-        SaveSettings();
+        Config.Save();
     });
     return input;
 }
@@ -337,7 +222,7 @@ function boundTextArea(flow: Flow, getter: () => string, setter: (val: string) =
     });
     input.addEventListener("change", () => {
         setter(input.value);
-        SaveSettings();
+        Config.Save();
     });
     return input;
 }
@@ -352,7 +237,7 @@ function addDropDown(flow: Flow, opts: Option[], getter: () => string, setter: (
     flow.bind(() => dropDown.value = getter());
     dropDown.addEventListener("change", () => {
         setter(dropDown.value);
-        SaveSettings();
+        Config.Save();
     });
     return dropDown;
 }
@@ -363,7 +248,7 @@ function addBoundDropDown(flow: Flow, opts: () => Option[], getter: () => string
     flow.bind(() => dropDown.value = getter());
     dropDown.addEventListener("change", () => {
         setter(dropDown.value);
-        SaveSettings();
+        Config.Save();
     });
     return dropDown;
 }

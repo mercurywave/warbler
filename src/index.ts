@@ -2,7 +2,7 @@ import { DB } from "./DB";
 import { Flow, Route } from "./flow";
 import { mkMain } from "./index_main";
 import { mkNavigation } from "./index_navigation";
-import { LoadSettings } from "./index_settings";
+import { Config } from "./settings";
 import { MicInterface, Speech } from "./speech";
 import { View } from "./view";
 
@@ -41,7 +41,7 @@ function mkRoot(flow: Flow) {
         className: "btPrimary",
     });
     btAddVoiceNote.addEventListener("click", () => {
-        if(MicInterface.isRecording()){
+        if (MicInterface.isRecording()) {
             MicInterface.stop();
         }
         else
@@ -54,12 +54,12 @@ function mkRoot(flow: Flow) {
 function spawnNote(startRecording?: boolean) {
     let note = DB.CreateNote(View.CurrView().folder);
     View.ForceAdd(note);
-    if(startRecording) Flow.SendMail('autoRecord', note);
+    if (startRecording) Flow.SendMail('autoRecord', note);
     Flow.SendMail('noteFocus', note);
 }
 
 async function setup(): Promise<void> {
-    await LoadSettings();
+    await Config.LoadSettings();
     await DB.Init();
     Route.Init();
 }

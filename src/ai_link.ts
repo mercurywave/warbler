@@ -1,4 +1,4 @@
-import { ILlmServer } from "./index_settings";
+import { ILlmServer } from "./settings";
 import { util } from "./util";
 
 
@@ -9,7 +9,7 @@ export class AILinkage {
     }
     public async TestConnection(): Promise<[boolean, string]> {
         let baseUrl = this._server.url;
-        if(!baseUrl) return [false, 'URL is required'];
+        if (!baseUrl) return [false, 'URL is required'];
         let url = util.appendPathToUrl(baseUrl, 'api/tags');
         try {
             const response = await fetch(url, {

@@ -1,5 +1,5 @@
 import { Flow } from "./flow";
-import { Config } from "./index_settings";
+import { Config } from "./settings";
 import { Note, PendingTranscription } from "./note";
 import { Deferred, Nil, util } from "./util";
 
@@ -114,12 +114,12 @@ export namespace Speech {
     export function isEnabled(): boolean { return !!audioType(); }
 
     export function audioType(): string | Nil {
-        let type = Config().transcriptType;
+        let type = Config.getTranscriptType();
         if (!type) return null;
         return type;
     }
     export function audioUrl(): string | Nil {
-        let url = Config().transcriptUrl;
+        let url = Config.getTranscriptUrl();
         if (!url) return null;
         return url;
     }

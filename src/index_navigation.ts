@@ -1,6 +1,7 @@
 import { DB } from "./DB";
 import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
+import { mkSettingsLauncher } from "./index_settings";
 import { eSettingsPage, View } from "./view";
 
 
@@ -41,16 +42,9 @@ export function mkNavigation(flow: Flow) {
     flow.conditionalStyle(btRecycling, "noDisp", () => DB.DeletedNotes().length == 0);
 
     flow.bindCtl(mkFolderList);
-    let btSettings = flow.child<HTMLButtonElement>("button", {
-        id: "btSettings",
-        type: "button",
-        innerText: "Settings",
-        className: "btNavigate",
-    });
-    btSettings.addEventListener("click", () => {
-        Route.Launch("settings");
-    });
+    mkSettingsLauncher(flow);
 }
+
 
 function mkSearch(flow: Flow) {
     let div = flow.root("div", { id: "search" });
