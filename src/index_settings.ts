@@ -1,6 +1,6 @@
 import { AILinkage } from "./ai_link";
 import { Flow, Route } from "./flow";
-import { Rest, Nil, util } from "./util";
+import { Rest, Nil, util, Deferred } from "./util";
 import { eSettingsPage, View } from "./view";
 
 export interface ISettings {
@@ -49,6 +49,7 @@ function loopConfigedAiFunctions(): IAIFunction[] {
 let _config: ISettings;
 let _isStaticWebPage: boolean = false;
 let _backendFuncs: IBackendFunctions | Nil = null;
+let _pollBackendJob: Deferred<boolean> | Nil = null;
 export function Config(): ISettings { return _config; }
 export async function LoadSettings(): Promise<void> {
     let str = window.localStorage.getItem("warbler-settings");
@@ -95,13 +96,17 @@ function getBackendUrl(defaultToUrl?: boolean): string | Nil {
     return null;
 }
 async function tryPullFromBackend(defaultToUrl?: boolean): Promise<boolean> {
+    if (_pollBackendJob != null) return await _pollBackendJob;
     _backendFuncs = null;
+    _pollBackendJob = new Deferred();
     let url = getBackendUrl(defaultToUrl);
     if (!url) return false;
     let result = await Rest.get(url, "v1/config");
     if (result.success) {
         _backendFuncs = result.response!!;
     }
+    _pollBackendJob.resolve(result.success);
+    _pollBackendJob = null;
     return result.success;
 }
 
@@ -142,21 +147,25 @@ function mkSyncServer(flow: Flow) {
         You can connect to back end server independently 
         to synchronize your data and route AI connections.
     `.trim() : '');
-    
+
     let url = flow.child("div");
     flow.conditional(url, () => _isStaticWebPage || !!_config.backendOverride, mkBackendUrl);
 }
 
 function mkBackendUrl(flow: Flow) {
     lbl(flow, "Server URL:");
-    boundTextInput(flow,
+    let container = flow.child("div", {className: "setRow"});
+    let input = boundTextInput(flow,
         () => _config.backendOverride ?? "",
         v => {
             // TODO: This needs to be bigger deal
             // If you have local unsynced notes, you need to be able to select what to do
-            _config.backendOverride = v
-        },
+            _config.backendOverride = v;
+            tryPullFromBackend().then(() => Flow.Dirty());
+        }, container
     );
+    flow.bind(() => input.disabled = _pollBackendJob != null);
+    boundSpan(flow, () => _pollBackendJob ? 'Testing connection...' : '', container);
 }
 
 function mkTranscription(flow: Flow) {
@@ -371,6 +380,13 @@ function addSection(flow: Flow, label: string, builder: (flow: Flow) => void, ho
 
 function boundDescription(flow: Flow, getter: () => (string | Nil), parent?: HTMLElement): HTMLElement {
     let container = flow.elem(parent, "div", { className: "settingDescription" });
+    flow.bind(() => container.innerHTML = getter() ?? "");
+    flow.conditionalStyle(container, "noDisp", () => getter() == "");
+    return container;
+}
+
+function boundSpan(flow: Flow, getter: () => (string | Nil), parent?: HTMLElement): HTMLElement {
+    let container = flow.elem(parent, "span", { className: "setSpan" });
     flow.bind(() => container.innerHTML = getter() ?? "");
     flow.conditionalStyle(container, "noDisp", () => getter() == "");
     return container;

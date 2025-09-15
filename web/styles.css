@@ -512,6 +512,18 @@ body {
     margin-bottom: 4px;
 }
 
+.setRow{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.setSpan{
+    color: #FFF9E4;
+    margin: 5px 0;
+    font-size: smaller;
+}
+
 .liSetServers{
     padding: 10px 0;
 }
