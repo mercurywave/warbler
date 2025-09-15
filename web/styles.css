@@ -57,7 +57,7 @@ body {
     margin-right: 10px;
 }
 
-.scrollPad{
+.scrollPad {
     height: 75px;
 }
 
@@ -85,7 +85,7 @@ body {
     }
 }
 
-.actionPanel{
+.actionPanel {
     position: absolute;
     right: 10px;
     bottom: 10px;
@@ -93,6 +93,7 @@ body {
     flex-direction: row;
     gap: 10px;
 }
+
 .btPrimary {
     margin: 3px 0;
     align-items: center;
@@ -110,9 +111,10 @@ body {
     white-space: nowrap;
     word-break: break-word;
 }
-.btPrimary.recording{
+
+.btPrimary.recording {
     outline: 2px solid #f03400 !important;
-    background-color: #5e382e !important; 
+    background-color: #5e382e !important;
 }
 
 .btPrimary:active,
@@ -249,7 +251,8 @@ body {
     width: calc(100% - 12px - 20px);
     background-color: #213647;
 }
-.orphanedNote{
+
+.orphanedNote {
     background-color: #213647;
 }
 
@@ -300,7 +303,7 @@ body {
 }
 
 
-.pendRec{
+.pendRec {
     font-size: smaller;
     outline: 1px solid #3C4A56;
     padding: 6px;
@@ -308,7 +311,8 @@ body {
     flex-direction: row;
     gap: 10px;
 }
-.pendRec button{
+
+.pendRec button {
     background: none;
     border: 0;
     outline: 1px solid #fff;
@@ -316,15 +320,17 @@ body {
     color: #fff;
     font-size: .7em;
 }
-.btStop:disabled{
+
+.btStop:disabled {
     color: #586169;
     outline: 1px solid #586169;
 }
-.lblRecStatus{
+
+.lblRecStatus {
     width: 100px;
 }
 
-.lblError{
+.lblError {
     color: rgb(188, 40, 40);
     font-weight: 500;
 }
@@ -359,17 +365,20 @@ body {
     margin: 0 10px 0 0;
     transform: translateY(2px);
 }
-.bubbleFooter .btRecord{
+
+.bubbleFooter .btRecord {
     outline: 1px solid #3C4A56;
 }
-.bubbleFooter .btRecord.recording{
+
+.bubbleFooter .btRecord.recording {
     outline: 2px solid #f03400;
 }
-.bubbleFooter .btRecord.processing{
+
+.bubbleFooter .btRecord.processing {
     outline: 2px solid #0078f0;
 }
 
-.bubbleFooter button:hover{
+.bubbleFooter button:hover {
     outline: 1px solid #586169;
 }
 
@@ -389,17 +398,20 @@ body {
     transform: translateY(1px);
 }
 
-.mnuOptWrap{
+.mnuOptWrap {
     position: relative;
 }
-.mnuOptWrap{
+
+.mnuOptWrap {
     margin-right: 5px;
 }
-.btFakeMenu{
+
+.btFakeMenu {
     font-size: .8em;
     padding: 0 6px;
 }
-.mnuDropdown{
+
+.mnuDropdown {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -409,11 +421,13 @@ body {
     cursor: pointer;
     padding: 0 5px;
 }
-.mnuDropdown:hover ~ .btFakeMenu{
+
+.mnuDropdown:hover~.btFakeMenu {
     border-radius: 3px;
     outline: 1px solid #586169;
 }
-.mnuDropdown option{
+
+.mnuDropdown option {
     padding: 0 10px;
 }
 
@@ -492,7 +506,7 @@ body {
     display: none;
 }
 
-.settingHead{
+.settingHead {
     font-weight: 600;
     font-size: larger;
     margin-left: 5px;
@@ -500,54 +514,60 @@ body {
     margin-bottom: 5px;
 }
 
-.section{
+.section {
     margin-left: 5px;
 }
-.section select{
-    width: 140px;;
+
+.section select {
+    width: 140px;
+    ;
 }
 
-.lblSet{
+.lblSet {
     margin-top: 10px;
     margin-bottom: 4px;
 }
 
-.setRow{
+.setRow {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
 }
 
-.setSpan{
+.setSpan {
     color: #FFF9E4;
-    margin: 5px 0;
+    margin: 0 5px;
     font-size: smaller;
 }
 
-.liSetServers{
+.liSetServers {
     padding: 10px 0;
 }
-.setServer{
+
+.setServer {
     outline: 1px solid #3C4A56;
     padding: 5px;
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
 }
-.setServer label{
+
+.setServer label {
     display: flex;
     flex-direction: row;
     margin: 0 10px;
 }
-.setServer input{
+
+.setServer input {
     margin-left: 5px;
 }
-.edSetTextArea{
+
+.edSetTextArea {
     width: 400px;
     height: 150px;
 }
 
-.settingDescription{
+.settingDescription {
     font-size: smaller;
     color: #869aa8;
     margin: 10px 0;
@@ -556,11 +576,12 @@ body {
 a {
     color: #c5a4f2;
 }
+
 a:visited {
     color: #7852ad;
 }
 
-.setErr{
+.setErr {
     color: rgb(188, 40, 40);
     font-weight: 500;
     font-size: smaller;
