@@ -18,8 +18,10 @@ export function mkMain(flow: Flow, view: ViewData) {
 
     let pad = flow.child("div", { className: "scrollPad" });
     flow.bindMail('Route.Launch', null, () => {
-        requestAnimationFrame(() => pad.scrollIntoView())
-        pad.scrollIntoView();
+        if (!View.CurrView().canAddNotes) {
+            requestAnimationFrame(() => pad.scrollIntoView())
+            pad.scrollIntoView();
+        }
     });
 }
 
