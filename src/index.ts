@@ -7,8 +7,7 @@ import { MicInterface, Speech } from "./speech";
 import { View } from "./view";
 
 document.addEventListener("DOMContentLoaded", () => {
-    setup();
-    initUi();
+    setup().then(initUi);
 });
 
 function initUi() {
@@ -61,6 +60,6 @@ function spawnNote(startRecording?: boolean) {
 async function setup(): Promise<void> {
     await Config.LoadSettings();
     await DB.Init();
-    Route.Init();
+    await Route.Init();
 }
 window.addEventListener('popstate', () => Route.OnNavigate());

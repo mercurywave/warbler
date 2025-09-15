@@ -2,7 +2,7 @@ import { Nil } from "./util";
 
 let __tree: Flow;
 let __allFlows: Flow[] = [];
-let __scheduled: boolean = false;
+let __scheduled: boolean = true;
 let __mail: Mail[] = [];
 
 
@@ -16,6 +16,7 @@ export class Flow {
         builder(__tree);
         if (!__tree._root) throw 'no document root';
         Flow.Reflow();
+        __scheduled = false;
         return __tree._root;
     }
 
@@ -60,7 +61,7 @@ export class Flow {
             console.error("Dead letter failed to deliver", deadLetters);
         }
         __mail = __mail.filter(m => !mail.includes(m));
-        if(__mail.length > 0 && !__scheduled){
+        if (__mail.length > 0 && !__scheduled) {
             console.error("mail spill", [...__mail]);
         }
         setTimeout(() => {
@@ -81,12 +82,10 @@ export class Flow {
     // Mail is meant to be picked up. Dead letters log to console
     public static SendMail(type: string, data?: any) {
         __mail.push({ type, data });
-        Flow.Dirty();
     }
     // Spam is just sent to everyone. Who cares if it's actually read
     public static SendSpam(type: string, data?: any) {
         __mail.push({ spam: true, type, data });
-        Flow.Dirty();
     }
 
     public static getAllMail(): Mail[] { return [...__mail]; }
@@ -190,12 +189,13 @@ export class Flow {
         });
     }
 
-    public bindCtl(builder: (flow: Flow) => void, parent?: HTMLElement) {
+    public bindCtl(builder: (flow: Flow) => void, parent?: HTMLElement): HTMLElement {
         if (!this._root) throw 'root not set';
         let cFlow = new Flow(this, parent);
         builder(cFlow);
         if (!cFlow._root) throw 'builder did not set an element';
         if (!parent) this._root.appendChild(cFlow._root);
+        return cFlow._root;
     }
 
     // bind to an object that might be swapped out, like a view
@@ -402,41 +402,42 @@ export class Route {
         if (__scrollHistory[url])
             delete __scrollHistory[url];
 
-        Flow.SendSpam('Route.Launch');
         if (Route.updateUrl(path))
-            Route._asyncLaunch();
+            Route._asyncLaunch(() => Flow.SendSpam('Route.Launch'));
     }
 
-    public static Init(){
+    public static async Init(): Promise<void> {
         // initial page load counts as a launch for rendering
-        Flow.SendSpam('Route.Launch');
-        Route._asyncLaunch();
+        await Route._asyncLaunch(() => Flow.SendSpam('Route.Launch'));
     }
 
     public static OnNavigate() {
-        Flow.SendSpam('Route.Navigate');
-        Route._onNavigate();
+        Route._onNavigate(() => Flow.SendSpam('Route.Navigate'));
     }
 
-    static _onNavigate(){
-        let url = Route.GetUniqPage();
-        if (__scrollHistory[url] !== undefined) {
-            Flow.SendSpam('Route.Scroll', __scrollHistory[url] + 0);
-        }
-        Route._asyncLaunch();
+    static _onNavigate(act?: () => void) {
+        Route._asyncLaunch(() => {
+            if (act) act();
+            let url = Route.GetUniqPage();
+            if (__scrollHistory[url] !== undefined) {
+                Flow.SendSpam('Route.Scroll', __scrollHistory[url] + 0);
+            }
+        });
     }
-    static async _asyncLaunch(): Promise<void> {
+
+    static async _asyncLaunch(act?: () => void): Promise<void> {
         let [route, path] = Route.getCurrRoute();
-        if(route._onPreLoad){
-            try{
+        if (route._onPreLoad) {
+            try {
                 await route._onPreLoad();
-            } catch(e) { console.error(e); }
+            } catch (e) { console.error(e); }
         }
 
         if (__boundScrollPane?.isConnected) {
             __scrollHistory[__lastPageLoaded] = __boundScrollPane.scrollTop;
         }
 
+        if (act) act();
         if (route._onNavigate) route._onNavigate(path);
         Flow.Dirty();
         __lastPageLoaded = Route.GetUniqPage();

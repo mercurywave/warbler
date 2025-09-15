@@ -9,7 +9,7 @@ import { eView, View, ViewData } from "./view";
 
 export function mkMain(flow: Flow, view: ViewData) {
     flow.root("div", { className: "mainInner" });
-    flow.bindCtl(mkViewHeader);
+    let header = flow.bindCtl(mkViewHeader);
     let viewContainer = flow.child("div", { className: "viewContainer" });
 
     // this snapshots the route at time of construction, because we manage this via views at parent level
@@ -17,10 +17,9 @@ export function mkMain(flow: Flow, view: ViewData) {
 
     let pad = flow.child("div", { className: "scrollPad" });
     flow.bindMail('Route.Launch', null, () => {
-        if (!View.CurrView().canAddNotes) {
-            requestAnimationFrame(() => pad.scrollIntoView())
-            pad.scrollIntoView();
-        }
+        let elem = view.canAddNotes ? pad : header;
+        requestAnimationFrame(() => elem.scrollIntoView());
+        elem.scrollIntoView();
     });
 }
 

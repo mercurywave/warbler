@@ -25,7 +25,9 @@ export class ViewData {
         return this._notes;
     }
 
-    public get canAddNotes(): boolean { return this.type != eView.Settings && !this.showingDeleted; }
+    public get canAddNotes(): boolean { 
+        return this.type != eView.Settings && this.type != eView.None && !this.showingDeleted; 
+    }
 
     public get more(): number { return this._fullResults.length - this.notes.length; }
 
