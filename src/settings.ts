@@ -70,6 +70,8 @@ export namespace Config {
     export function isStaticWebPage(): boolean { return _isStaticWebPage; }
     export function isCheckingOnlineStatus(): boolean { return !!_pollBackendJob; }
 
+    export function backendHandlesAsr(): boolean { return !!_backendFuncs?.ASR; }
+
 
     export async function LoadSettings(): Promise<void> {
         let str = window.localStorage.getItem("warbler-settings");
@@ -78,7 +80,7 @@ export namespace Config {
             CleanSettings();
         } catch { ResetSettings(); }
         else ResetSettings();
-        if (!await tryPullFromBackend(true))
+        if (!await tryPullFromBackend(true) || _config.backendOverride)
             _isStaticWebPage = true;
     }
 

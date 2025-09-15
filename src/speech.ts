@@ -96,14 +96,19 @@ export namespace Speech {
         console.log("audio recorded");
         try {
             let addition = '';
-            switch (audioType()) {
-                case 'WhisperAsr':
-                    addition = await runWhisperAsr(blob);
-                    break;
-                case 'Warbler':
-                    addition = await runWarblerAsr(blob);
-                    break;
-                default: throw 'audio type not implemented'
+            if (Config.backendHandlesAsr()) {
+                addition = await runWarblerAsr(blob);
+            }
+            else {
+                switch (audioType()) {
+                    case 'WhisperAsr':
+                        addition = await runWhisperAsr(blob);
+                        break;
+                    case 'Warbler':
+                        addition = await runWarblerAsr(blob);
+                        break;
+                    default: throw 'audio type not implemented'
+                }
             }
             trans.Complete(addition);
         } catch (e) {

@@ -45,12 +45,11 @@ export function mkSettings(flow: Flow, subPage: string) {
 
 function mkMain(flow: Flow) {
     addSection(flow, "Database", mkSyncServer);
-    addSection(flow, "Transcription", mkTranscription);
+    addSection(flow, "Transcription", mkTranscription, Config.backendHandlesAsr);
     addSection(flow, "LLM Servers", mkLlmServers);
-    let aiContainer = flow.child("div");
-    addSection(flow, "AI Summary", f => mkAiConfig(f, Config.getSummaryAi()), aiContainer);
-    addSection(flow, "AI Transcribe Filter", f => mkAiConfig(f, Config.getCleanAudioAi()), aiContainer);
-    flow.conditionalStyle(aiContainer, "noDisp", () => Config.getllmServers().length < 1);
+    let doShowAi = () => Config.getllmServers().length < 1;
+    addSection(flow, "AI Summary", f => mkAiConfig(f, Config.getSummaryAi()), doShowAi);
+    addSection(flow, "AI Transcribe Filter", f => mkAiConfig(f, Config.getCleanAudioAi()), doShowAi);
 }
 
 function mkSyncServer(flow: Flow) {
@@ -65,7 +64,7 @@ function mkSyncServer(flow: Flow) {
     `.trim() : '');
 
     let url = flow.child("div");
-    flow.conditional(url, () => Config.isStaticWebPage() || Config.isOnline(), mkBackendUrl);
+    flow.conditional(url, () => Config.isStaticWebPage() || !Config.isOnline(), mkBackendUrl);
 }
 
 function mkBackendUrl(flow: Flow) {
@@ -257,10 +256,13 @@ function _boundOpt(flow: Flow, opt: Option) {
     flow.bind(() => root.innerText = opt[1]);
 }
 
-function addSection(flow: Flow, label: string, builder: (flow: Flow) => void, host?: HTMLElement) {
+function addSection(flow: Flow, label: string, builder: (flow: Flow) => void, hideIf?: () => boolean) {
+    let host = flow.child("div");
     flow.elem(host, "div", { innerText: label, className: "settingHead" });
     let section = flow.elem(host, "div", { className: "section" });
     flow.bindCtl(builder, section);
+    if (hideIf)
+        flow.conditionalStyle(host, "noDisp", hideIf);
 }
 
 function boundDescription(flow: Flow, getter: () => (string | Nil), parent?: HTMLElement): HTMLElement {
