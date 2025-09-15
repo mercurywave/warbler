@@ -75,6 +75,38 @@ export namespace util {
 
 }
 
+export namespace Rest{
+    export async function get<T>(baseUrl: string, path: string): Promise<IResult<T>> {
+        if(!baseUrl) return result(false, 'URL is required');
+        let url = util.appendPathToUrl(baseUrl, path);
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                return result(true, undefined, result as any);
+            } else {
+                console.error('Failed:', response.status, response.statusText);
+                return result(false, `Error: ${response.status} ${response.statusText}`);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            return result(false, `Error: ${error}`);
+        }
+        
+    }
+}
+function result<T>(success: boolean, error?:string, response?: T): IResult<T>{
+    return { success, error, response };
+}
+export interface IResult<T>{
+    success: boolean;
+    error?: string;
+    response?: T;
+}
+
 export class Deferred<T> implements Promise<T> {
 
     private _resolveSelf!: ((value: T | PromiseLike<T>) => void);

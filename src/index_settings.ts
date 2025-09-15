@@ -1,6 +1,6 @@
 import { AILinkage } from "./ai_link";
 import { Flow, Route } from "./flow";
-import { Nil, util } from "./util";
+import { Rest, Nil, util } from "./util";
 import { eSettingsPage, View } from "./view";
 
 export interface ISettings {
@@ -11,6 +11,8 @@ export interface ISettings {
 
     summaryAi: IAIFunction;
     cleanAudioAi: IAIFunction;
+
+    backendOverride?: string;
 }
 
 export interface ILlmServer {
@@ -24,6 +26,10 @@ export interface IAIFunction {
     serverKey?: string;
     model?: string;
     systemPrompt?: string;
+}
+
+export interface IBackendFunctions {
+    ASR?: boolean;
 }
 
 interface IService {
@@ -41,14 +47,18 @@ function loopConfigedAiFunctions(): IAIFunction[] {
 }
 
 let _config: ISettings;
+let _isStaticWebPage: boolean = false;
+let _backendFuncs: IBackendFunctions | Nil = null;
 export function Config(): ISettings { return _config; }
-export function LoadSettings() {
+export async function LoadSettings(): Promise<void> {
     let str = window.localStorage.getItem("warbler-settings");
     if (str) try {
         _config = JSON.parse(str);
         CleanSettings();
     } catch { ResetSettings(); }
     else ResetSettings();
+    if(!await tryPullFromBackend(true))
+        _isStaticWebPage = true;
 }
 function CleanSettings() {
     if (!_config.llmServers) _config.llmServers = []; // TODO: remove backwards compatability break
@@ -77,10 +87,28 @@ function SaveSettings() {
     window.localStorage.setItem("warbler-settings", JSON.stringify(_config));
     Flow.Dirty();
 }
+function getBackendUrl(defaultToUrl?: boolean): string | Nil{
+    if(_config.backendOverride)
+        return _config.backendOverride;
+    if(!_isStaticWebPage || defaultToUrl)
+        return window.location.origin + window.location.pathname;
+    return null;
+}
+async function tryPullFromBackend(defaultToUrl?: boolean): Promise<boolean> {
+    _backendFuncs = null;
+    let url = getBackendUrl(defaultToUrl);
+    if(!url) return false;
+    let result = await Rest.get(url, "v1/config");
+    if (result.success) {
+        _backendFuncs = result.response!!;
+    }
+    return result.success;
+}
 
 Route.Register("settings", (flow, pars) => {
     mkSettings(flow, pars["sub"]);
-}, pars => View.Settings(parseSettings(pars["sub"])));
+}, pars => View.Settings(parseSettings(pars["sub"])),
+    async () => { await tryPullFromBackend() });
 
 function parseSettings(subPage: string): eSettingsPage {
     if (subPage?.toLowerCase() === "main") return eSettingsPage.Main;

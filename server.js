@@ -18,7 +18,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-app.get('/config', (req, res) => {
+app.get('/v1/config', (req, res) => {
     let type = process.env.ASR_TYPE;
     res.status(200).json({
         ASR: (type != ""),

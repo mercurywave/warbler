@@ -59,7 +59,7 @@ function spawnNote(startRecording?: boolean) {
 }
 
 async function setup(): Promise<void> {
-    LoadSettings();
+    await LoadSettings();
     await DB.Init();
     Route.Init();
 }
