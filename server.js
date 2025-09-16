@@ -7,9 +7,12 @@ const path = require('path');
 const multer = require('multer');
 const upload = multer();
 const FormData = require('form-data');
+const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 6464;
+
+if(!process.env.ENABLE_CORS) app.use(cors())
 
 app.use(express.static(path.join(__dirname, 'dist')));
 
@@ -19,7 +22,6 @@ app.get('/', (req, res) => {
 });
 
 app.get('/v1/config', (req, res) => {
-    checkCors(res);
     let type = process.env.ASR_TYPE;
     res.status(200).json({
         ASR: (type != ""),
@@ -29,7 +31,6 @@ app.get('/v1/config', (req, res) => {
 app.post('/v1/asr', upload.single('audio_file'), async (req, res) => {
     let type = process.env.ASR_TYPE;
     let baseUrl = process.env.ASR_URL;
-    checkCors(res);
     if (!type) {
         res.status(501).json({ error: 'ASR_TYPE not configured' });
         return;
@@ -63,14 +64,6 @@ app.post('/v1/asr', upload.single('audio_file'), async (req, res) => {
         res.status(501).json({ error: 'Invalid ASR_TYPE' });
     }
 });
-
-function checkCors(res) {
-    if (process.env.ADD_CORS) {
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-    }
-}
 
 if (process.env.ENABLE_HTTPS) {
     const serverOptions = {
