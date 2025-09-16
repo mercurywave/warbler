@@ -100,15 +100,20 @@ export namespace Config {
         if (_pollBackendJob != null) return await _pollBackendJob;
         _backendFuncs = null;
         _pollBackendJob = new Deferred();
-        let url = getBackendUrl(defaultToUrl);
-        if (!url) return false;
-        let result = await Rest.get(url, "v1/config");
-        if (result.success) {
-            _backendFuncs = result.response!!;
-        }
-        _pollBackendJob.resolve(result.success);
+        let success = false;
+        try {
+            let url = getBackendUrl(defaultToUrl);
+            if (url) {
+                let result = await Rest.get(url, "v1/config");
+                success = result.success;
+                if (success) {
+                    _backendFuncs = result.response!!;
+                }
+                _pollBackendJob.resolve(result.success);
+            }
+        } catch { }
         _pollBackendJob = null;
-        return result.success;
+        return success;
     }
 
     export let llmPipelines: IService[] = [
