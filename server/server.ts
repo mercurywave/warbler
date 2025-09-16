@@ -1,18 +1,19 @@
-require('dotenv').config();
-const fs = require('fs');
-const https = require('https');
-const express = require('express');
-const axios = require('axios');
-const path = require('path');
-const multer = require('multer');
-const upload = multer();
-const FormData = require('form-data');
-const cors = require('cors');
+import dotenv from "dotenv";
+import express from "express";
+import cors from "cors";
+import path from "path";
+import https from "https";
+import fs from "fs";
+import multer from "multer";
+import axios from "axios";
+import FormData from "form-data";
 
+dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 6464;
+const upload = multer();
 
-if(!process.env.ENABLE_CORS) app.use(cors())
+if (!process.env.ENABLE_CORS) app.use(cors());
 
 app.use(express.static(path.join(__dirname, 'dist')));
 
@@ -44,20 +45,26 @@ app.post('/v1/asr', upload.single('audio_file'), async (req, res) => {
         let url = appendPathToUrl(baseUrl, 'asr');
         url.search = 'output=json';
         try {
-            const audioBuffer = req.file.buffer;
-            const originalName = req.file.originalname;
+            const audioBuffer = req.file!.buffer;
+            const originalName = req.file!.originalname;
             const formData = new FormData();
             formData.append('audio_file', audioBuffer, originalName);
 
-            const response = await axios.post(url, formData, {
+            const response = await axios.post(url.toString(), formData, {
                 headers: formData.getHeaders(),
             });
 
             res.status(200).json(response.data);
 
         } catch (error) {
-            console.error('Error making external call:', error.message);
-            res.status(500).json({ error: error.message });
+            if (axios.isAxiosError(error)) {
+                console.error('Error making external call:', error.message);
+                res.status(500).json({ error: error.message });
+            }
+            else {
+                console.error('Error making external call:', error);
+                res.status(500).json({ error: error });
+            }
         }
     }
     else {
@@ -80,8 +87,7 @@ else {
     });
 }
 
-
-function appendPathToUrl(base, segment) {
+function appendPathToUrl(base: string, segment: string): URL {
     const url = new URL(base);
     if (segment.startsWith('/')) segment = segment.substring(1);
     // Ensure no double slashes or missing slashes

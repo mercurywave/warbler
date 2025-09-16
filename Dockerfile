@@ -12,10 +12,10 @@ RUN apk add --no-cache openssl
 ENV NODE_ENV=production
 WORKDIR /usr/src/app
 COPY --from=build /usr/src/app/package.json ./
-COPY --from=build /usr/src/app/server.js ./
 COPY --from=build /usr/src/app/certgen.sh ./
 COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist
+COPY --from=build /usr/src/app/dist-server/index.js ./
 EXPOSE 6464
 RUN mkdir -p /certs && chown node:node /certs
 RUN mkdir -p /usr/src/app/data && chown -R node:node /usr/src/app/data
@@ -23,4 +23,4 @@ USER node
 RUN if [ -z "$ENABLE_HTTPS" ]; then \
         sh "certgen.sh"; \ 
     fi
-CMD ["node", "server.js"]
+CMD ["node", "index.js"]
