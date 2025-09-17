@@ -18,6 +18,11 @@ if (!process.env.ENABLE_CORS) app.use(cors());
 
 app.use(express.static(path.join(__dirname, 'dist')));
 
+if(!fs.existsSync("./data")){
+    fs.mkdirSync("./data");
+    console.log("data directory created");
+}
+
 // fallback to index.html for SPA routing
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));

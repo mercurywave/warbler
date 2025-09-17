@@ -1,0 +1,74 @@
+export type Nil = null | undefined;
+
+export namespace util {
+
+    export function ellipsize(text: string, maxLength: number) {
+        if (text.length > maxLength) {
+            return text.slice(0, maxLength - 3) + "...";
+        }
+        return text;
+    }
+
+    export function appendPiece(text: string, delim: string, append: string): string {
+        if (text == "") return append;
+        return text + delim + append;
+    }
+
+    export function deepCopy(obj: any): any {
+        return JSON.parse(JSON.stringify(obj));
+    }
+    export function getRelativeTime(date: Date): string {
+        const now = new Date();
+        const diffMs = date.getTime() - now.getTime();
+
+        const units: Intl.RelativeTimeFormatUnit[] = [
+            'year',    // 0
+            'month',   // 1
+            'day',     // 2
+            'hour',    // 3
+            'minute',  // 4
+            'second'   // 5
+        ];
+
+        const divisors = [
+            1000 * 60 * 60 * 24 * 365, // year
+            1000 * 60 * 60 * 24 * 30,  // month
+            1000 * 60 * 60 * 24,       // day
+            1000 * 60 * 60,            // hour
+            1000 * 60,                 // minute
+            1000                      // second
+        ];
+
+        const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+
+        for (let i = 0; i < units.length; i++) {
+            const diff = diffMs / divisors[i];
+            if (Math.abs(diff) >= 1) {
+                return rtf.format(Math.round(diff), units[i]);
+            }
+        }
+        return rtf.format(0, 'second');
+    }
+
+    export function UUID(): string {
+        // only available in HTTPS
+        if (typeof crypto?.randomUUID === 'function')
+            return crypto.randomUUID();
+
+        // you're not banking with this - it's fine
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    export function appendPathToUrl(base: string, segment: string): URL {
+        const url = new URL(base);
+        if(segment.startsWith('/')) segment = segment.substring(1);
+        // Ensure no double slashes or missing slashes
+        url.pathname = `${url.pathname.replace(/\/$/, '')}/${segment}`;
+        return url;
+    }
+
+}

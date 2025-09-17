@@ -1,5 +1,6 @@
 # Warbler-specific
 dist-server
+data
 
 # Logs
 logs
