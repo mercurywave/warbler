@@ -10,7 +10,7 @@
     "start": "npm run build && webpack serve --open",
     "watch:web": "chokidar \"web/**/*\" -c \"node static-copy.js\"",
     "watch:ts": "npm run build && webpack --watch",
-    "watch": "npm-run-all --parallel watch:ts watch:web",
+    "watch": "npm-run-all --parallel watch:ts watch:web devServe",
     "serve": "node dist-server/index.js",
     "devServe": "nodemon dist-server/index.js"
   },

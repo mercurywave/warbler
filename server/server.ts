@@ -7,6 +7,7 @@ import fs from "fs";
 import multer from "multer";
 import axios from "axios";
 import FormData from "form-data";
+import { apiGetConfig } from "./config";
 
 dotenv.config();
 const app = express();
@@ -22,12 +23,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-app.get('/v1/config', (req, res) => {
-    let type = process.env.ASR_TYPE;
-    res.status(200).json({
-        ASR: (type != ""),
-    });
-});
+app.get('/v1/config', apiGetConfig);
 
 app.post('/v1/asr', upload.single('audio_file'), async (req, res) => {
     let type = process.env.ASR_TYPE;
