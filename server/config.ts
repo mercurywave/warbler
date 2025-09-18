@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import jsonfile from 'jsonfile';
+import * as jsonfile from 'jsonfile';
 import { util } from './util';
 
 interface IStaticCache{
