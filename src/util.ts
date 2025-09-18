@@ -67,7 +67,7 @@ export namespace util {
 
     export function appendPathToUrl(base: string, segment: string): URL {
         const url = new URL(base);
-        if(segment.startsWith('/')) segment = segment.substring(1);
+        if (segment.startsWith('/')) segment = segment.substring(1);
         // Ensure no double slashes or missing slashes
         url.pathname = `${url.pathname.replace(/\/$/, '')}/${segment}`;
         return url;
@@ -75,9 +75,9 @@ export namespace util {
 
 }
 
-export namespace Rest{
+export namespace Rest {
     export async function get<T>(baseUrl: string, path: string): Promise<OResult<T>> {
-        if(!baseUrl) return new OResult(false, 'URL is required');
+        if (!baseUrl) return new OResult(false, 'URL is required');
         let url = util.appendPathToUrl(baseUrl, path);
         try {
             const response = await fetch(url, {
@@ -96,14 +96,36 @@ export namespace Rest{
             console.error('Error:', error);
             return new OResult(false, `Error: ${error}`);
         }
-        
+    }
+    export async function post<T>(baseUrl: string, path: string, bodyObj: any): Promise<OResult<T>> {
+        if (!baseUrl) return new OResult(false, 'URL is required');
+        let url = util.appendPathToUrl(baseUrl, path);
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                signal: AbortSignal.timeout(3000),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bodyObj)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                return new OResult(true, undefined, result as any);
+            } else {
+                console.error('Failed:', response.status, response.statusText);
+                return new OResult(false, `Error: ${response.status} ${response.statusText}`);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            return new OResult(false, `Error: ${error}`);
+        }
     }
 }
-export class OResult<T>{
+export class OResult<T> {
     success: boolean;
     error?: string;
     response?: T;
-    public constructor(success: boolean, error?:string, response?: T){
+    public constructor(success: boolean, error?: string, response?: T) {
         this.success = success;
         this.error = error;
         this.response = response;

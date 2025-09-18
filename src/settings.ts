@@ -11,6 +11,7 @@ interface ISettings {
     cleanAudioAi: IAIFunction;
 
     backendOverride?: string | Nil;
+    primeServerId?: string | Nil;
 }
 
 export interface ILlmServer {
@@ -26,7 +27,9 @@ export interface IAIFunction {
     systemPrompt?: string;
 }
 
-export interface IBackendFunctions {
+export interface IBackendSettings {
+    version: number;
+    uniqueId: string;
     ASR?: boolean;
 }
 
@@ -39,7 +42,7 @@ export interface IService {
 
 let _config: ISettings;
 let _isStaticWebPage: boolean = false;
-let _backendFuncs: IBackendFunctions | Nil = null;
+let _backendFuncs: IBackendSettings | Nil = null;
 let _pollBackendJob: Deferred<boolean> | Nil = null;
 
 export namespace Config {
@@ -66,9 +69,26 @@ export namespace Config {
     export function setBackendOverride(url: string | Nil) { _config.backendOverride = url; }
 
 
-    export function isOnline(): boolean { return !!_backendFuncs; }
+    export function isOnline(): boolean { 
+        return !!_backendFuncs && _backendFuncs?.uniqueId == _config?.primeServerId; 
+    }
     export function isStaticWebPage(): boolean { return _isStaticWebPage; }
     export function isCheckingOnlineStatus(): boolean { return !!_pollBackendJob; }
+    export function isServerMismatched(): boolean {
+        return !!_backendFuncs && _backendFuncs.uniqueId != _config?.primeServerId;
+    }
+    export function getConnectedServerId(): string | undefined { return _backendFuncs?.uniqueId; }
+
+    export function canChangePrimaryServer(): boolean { 
+        return isStaticWebPage() && isServerMismatched(); 
+    }
+
+    export function setPrimaryServer(uniqueId: string | undefined) {
+        if(canChangePrimaryServer()){
+            _config.primeServerId = uniqueId;
+            Save();
+        }
+    }
 
     export function backendHandlesAsr(): boolean { return !!_backendFuncs?.ASR; }
 
@@ -82,6 +102,11 @@ export namespace Config {
         else ResetSettings();
         if (!await tryPullFromBackend(true) || _config.backendOverride)
             _isStaticWebPage = true;
+        if(!_isStaticWebPage && !_config.primeServerId){
+            // first time user
+            _config.primeServerId = getBackendUrl(true);
+            Save();
+        }
     }
 
 
@@ -107,7 +132,8 @@ export namespace Config {
                 let result = await Rest.get(url, "v1/config");
                 success = result.success;
                 if (success) {
-                    _backendFuncs = result.response!!;
+                    _backendFuncs = result.response as any;
+                    console.log("Conection successful", _backendFuncs);
                 }
                 _pollBackendJob.resolve(result.success);
             }

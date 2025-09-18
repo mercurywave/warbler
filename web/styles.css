@@ -567,9 +567,26 @@ body {
     height: 150px;
 }
 
+.btCaution{
+    border-radius: 3px;
+    background-color: #bb742d;
+    color: #fff;
+    border: 0;
+    outline: 1px solid #fff;
+    margin: 0 10px;
+}
+.btCaution:hover{
+    background-color: #9b1a09;
+}
+
 .settingDescription {
     font-size: smaller;
     color: #869aa8;
+    margin: 10px 0;
+}
+.settingWarning{
+    font-size: smaller;
+    color: #de8b38;
     margin: 10px 0;
 }
 

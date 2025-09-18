@@ -1,6 +1,8 @@
+import { dir } from "console";
 import { Folder, FolderData } from "./folder";
 import { Note, NoteData, NoteMeta } from "./note";
-import { Deferred, Nil, util } from "./util";
+import { Config } from "./settings";
+import { Deferred, Nil, Rest, util } from "./util";
 
 export namespace DB {
     let _db: IDBDatabase;
@@ -54,7 +56,7 @@ export namespace DB {
     }
 
     export async function ReloadIfChangedExternally() {
-        if(!__needsUpdate) return;
+        if (!__needsUpdate) return;
         await LoadFolders();
         await LoadNotes();
     }
@@ -90,7 +92,7 @@ export namespace DB {
             needsFileSave: false,
         }
         let note = new Note(meta);
-        if(folder) note.data.folderId = folder.id;
+        if (folder) note.data.folderId = folder.id;
         _notes.push(note);
         return note;
     }
@@ -114,6 +116,24 @@ export namespace DB {
         await saveHelper("notes", note._meta);
         note._needsDbSave = false;
         note._meta.needsFileSave = true;
+        setTimeout(SyncNotes, 100);
+    }
+
+    async function SyncNotes() {
+        let dirty = GetNotesToServerSave();
+        if (!dirty || !dirty.length || !Config.isOnline()) return;
+        let toSync = dirty.map(n => n.data);
+
+        try {
+            let url = Config.getBackendUrl();
+            if (url) {
+                let result = await Rest.post(url, "v1/updateNotes", toSync);
+                if (result.success) {
+                    // TODO: update local / conflict handling
+                    console.log("Notes Saved", result.response);
+                }
+            }
+        } catch (e) { console.error(e); }
     }
 
     export async function SaveFolder(folder: Folder): Promise<void> {
@@ -131,6 +151,9 @@ export namespace DB {
         await future;
         _setDbDirty();
     }
+
+    export function AnyNotesToServerSave(): boolean { return GetNotesToServerSave().length > 0; }
+    export function GetNotesToServerSave(): Note[] { return _notes.filter(n => n._meta.needsFileSave); }
 
     export function AllNotes(): Note[] { return _notes.filter(n => !n.isDeleted); }
     export function AllParents(): Note[] { return AllNotes().filter(n => !n.isChild); }
@@ -168,7 +191,7 @@ export namespace DB {
         _setDbDirty();
     }
 
-    
+
 }
 
 const UPDATE_KEY = "warbler-update-key";
@@ -176,13 +199,12 @@ let __updateKey = localStorage.getItem(UPDATE_KEY);
 let __needsUpdate = false;
 window.addEventListener('storage', () => {
     let newKey = localStorage.getItem(UPDATE_KEY);
-    if(newKey !== __updateKey)
-    {
+    if (newKey !== __updateKey) {
         __updateKey = newKey;
         __needsUpdate = true;
     }
 });
-function _setDbDirty(){
+function _setDbDirty() {
     __updateKey = util.UUID();
     localStorage.setItem(UPDATE_KEY, __updateKey);
 }
