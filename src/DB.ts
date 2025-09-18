@@ -1,6 +1,8 @@
+import { dir } from "console";
 import { Folder, FolderData } from "./folder";
 import { Note, NoteData, NoteMeta } from "./note";
-import { Deferred, Nil, util } from "./util";
+import { Config } from "./settings";
+import { Deferred, Nil, Rest, util } from "./util";
 
 export namespace DB {
     let _db: IDBDatabase;
@@ -114,6 +116,24 @@ export namespace DB {
         await saveHelper("notes", note._meta);
         note._needsDbSave = false;
         note._meta.needsFileSave = true;
+        setTimeout(SyncNotes, 100);
+    }
+
+    async function SyncNotes() {
+        let dirty = GetNotesToServerSave();
+        if (!dirty || !dirty.length || !Config.isOnline()) return;
+        let toSync = dirty.map(n => n.data);
+
+        try {
+            let url = Config.getBackendUrl();
+            if (url) {
+                let result = await Rest.post(url, "v1/updateNotes", toSync);
+                if (result.success) {
+                    // TODO: update local / conflict handling
+                    console.log("Notes Saved", result.response);
+                }
+            }
+        } catch (e) { console.error(e); }
     }
 
     export async function SaveFolder(folder: Folder): Promise<void> {
@@ -132,7 +152,7 @@ export namespace DB {
         _setDbDirty();
     }
 
-    export function AnyNotesToServerSave(): boolean { return !!GetNotesToServerSave(); }
+    export function AnyNotesToServerSave(): boolean { return GetNotesToServerSave().length > 0; }
     export function GetNotesToServerSave(): Note[] { return _notes.filter(n => n._meta.needsFileSave); }
 
     export function AllNotes(): Note[] { return _notes.filter(n => !n.isDeleted); }
