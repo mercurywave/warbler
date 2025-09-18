@@ -68,18 +68,18 @@ function mkSyncServer(flow: Flow) {
     let url = flow.child("div");
     flow.conditional(url, () => Config.isStaticWebPage() || !Config.isOnline(), mkBackendUrl);
 
-    boundWarning(flow, () => Config.isServerMismatched() ? `
+    boundWarning(flow, () => Config.canChangePrimaryServer() ? `
         You are connected to a backend, but the data on your device
         did not originate from that server. Changes will not sync
         until you connect to the original server, or make this your
         primary server.
     `.trim() : '');
 
-    boundWarning(flow, () => (Config.isServerMismatched() && DB.AnyNotesToServerSave()) ? `
+    boundWarning(flow, () => (Config.canChangePrimaryServer() && DB.AnyNotesToServerSave()) ? `
         You also have notes on this device that have not been saved to a backend server!
     `.trim() : '');
 
-    boundWarning(flow, () => Config.isServerMismatched() ? `These options cannot be undone!` : '');
+    boundWarning(flow, () => Config.canChangePrimaryServer() ? `These options cannot be undone!` : '');
 
     let btSync = flow.child<HTMLButtonElement>("button", {
         type: "button",
@@ -87,7 +87,15 @@ function mkSyncServer(flow: Flow) {
         title: `Make this server my primary server, and send pending changes to this server`,
         className: "btCaution",
     });
-    flow.conditionalStyle(btSync, "noDisp", () => !(Config.isServerMismatched() && DB.AnyNotesToServerSave()));
+    flow.conditionalStyle(btSync, "noDisp", () => !(Config.canChangePrimaryServer() && DB.AnyNotesToServerSave()));
+    btSync.addEventListener("click", () => {
+        let uid = Config.getConnectedServerId();
+        if(uid) {
+            console.log(`Setting primary server to "${uid}"`)
+            Config.setPrimaryServer(uid);
+        }
+        // TODO: Save then reload from server
+    });
 
     let btPull = flow.child<HTMLButtonElement>("button", {
         type: "button",
@@ -102,7 +110,15 @@ function mkSyncServer(flow: Flow) {
             `DISCARD ALL PENDING NOTES, and make this my primary server` :
             `Load the notes on this server and make this my primary server`;
     });
-    flow.conditionalStyle(btSync, "noDisp", () => !Config.isServerMismatched());
+    flow.conditionalStyle(btPull, "noDisp", () => !Config.canChangePrimaryServer());
+    btPull.addEventListener("click", () => {
+        let uid = Config.getConnectedServerId();
+        if(uid) {
+            console.log(`Setting primary server to "${uid}"`)
+            Config.setPrimaryServer(uid);
+        }
+        // TODO: reload from server
+    });
 }
 
 function mkBackendUrl(flow: Flow) {
