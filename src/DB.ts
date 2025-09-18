@@ -54,7 +54,7 @@ export namespace DB {
     }
 
     export async function ReloadIfChangedExternally() {
-        if(!__needsUpdate) return;
+        if (!__needsUpdate) return;
         await LoadFolders();
         await LoadNotes();
     }
@@ -90,7 +90,7 @@ export namespace DB {
             needsFileSave: false,
         }
         let note = new Note(meta);
-        if(folder) note.data.folderId = folder.id;
+        if (folder) note.data.folderId = folder.id;
         _notes.push(note);
         return note;
     }
@@ -132,6 +132,9 @@ export namespace DB {
         _setDbDirty();
     }
 
+    export function AnyNotesToServerSave(): boolean { return !!GetNotesToServerSave(); }
+    export function GetNotesToServerSave(): Note[] { return _notes.filter(n => n._meta.needsFileSave); }
+
     export function AllNotes(): Note[] { return _notes.filter(n => !n.isDeleted); }
     export function AllParents(): Note[] { return AllNotes().filter(n => !n.isChild); }
     export function Unsorted(): Note[] { return AllParents().filter(n => !n.folder); }
@@ -168,7 +171,7 @@ export namespace DB {
         _setDbDirty();
     }
 
-    
+
 }
 
 const UPDATE_KEY = "warbler-update-key";
@@ -176,13 +179,12 @@ let __updateKey = localStorage.getItem(UPDATE_KEY);
 let __needsUpdate = false;
 window.addEventListener('storage', () => {
     let newKey = localStorage.getItem(UPDATE_KEY);
-    if(newKey !== __updateKey)
-    {
+    if (newKey !== __updateKey) {
         __updateKey = newKey;
         __needsUpdate = true;
     }
 });
-function _setDbDirty(){
+function _setDbDirty() {
     __updateKey = util.UUID();
     localStorage.setItem(UPDATE_KEY, __updateKey);
 }

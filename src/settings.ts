@@ -72,6 +72,9 @@ export namespace Config {
     export function isOnline(): boolean { return _backendFuncs?.uniqueId == _config?.backendUniqueId; }
     export function isStaticWebPage(): boolean { return _isStaticWebPage; }
     export function isCheckingOnlineStatus(): boolean { return !!_pollBackendJob; }
+    export function isServerMismatched(): boolean {
+        return !!_backendFuncs && _backendFuncs.uniqueId != _config?.backendUniqueId;
+    }
 
     export function backendHandlesAsr(): boolean { return !!_backendFuncs?.ASR; }
 

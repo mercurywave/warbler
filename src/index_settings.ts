@@ -1,4 +1,6 @@
+import { brotliCompressSync } from "zlib";
 import { AILinkage } from "./ai_link";
+import { DB } from "./DB";
 import { Flow, Route } from "./flow";
 import { Config, IAIFunction, ILlmServer, IService } from "./settings";
 import { Nil, util } from "./util";
@@ -65,6 +67,42 @@ function mkSyncServer(flow: Flow) {
 
     let url = flow.child("div");
     flow.conditional(url, () => Config.isStaticWebPage() || !Config.isOnline(), mkBackendUrl);
+
+    boundWarning(flow, () => Config.isServerMismatched() ? `
+        You are connected to a backend, but the data on your device
+        did not originate from that server. Changes will not sync
+        until you connect to the original server, or make this your
+        primary server.
+    `.trim() : '');
+
+    boundWarning(flow, () => (Config.isServerMismatched() && DB.AnyNotesToServerSave()) ? `
+        You also have notes on this device that have not been saved to a backend server!
+    `.trim() : '');
+
+    boundWarning(flow, () => Config.isServerMismatched() ? `These options cannot be undone!` : '');
+
+    let btSync = flow.child<HTMLButtonElement>("button", {
+        type: "button",
+        innerText: "Sync Local Changes To Server",
+        title: `Make this server my primary server, and send pending changes to this server`,
+        className: "btCaution",
+    });
+    flow.conditionalStyle(btSync, "noDisp", () => !(Config.isServerMismatched() && DB.AnyNotesToServerSave()));
+
+    let btPull = flow.child<HTMLButtonElement>("button", {
+        type: "button",
+        innerText: "Make This My Primary",
+        className: "btCaution",
+    });
+    flow.bind(() => {
+        btPull.innerText = DB.AnyNotesToServerSave() ?
+            `DISCARD Local Changes And Switch To This Server` :
+            `Make This Server MY Primary`;
+        btPull.title = DB.AnyNotesToServerSave() ?
+            `DISCARD ALL PENDING NOTES, and make this my primary server` :
+            `Load the notes on this server and make this my primary server`;
+    });
+    flow.conditionalStyle(btSync, "noDisp", () => !Config.isServerMismatched());
 }
 
 function mkBackendUrl(flow: Flow) {
@@ -267,6 +305,13 @@ function addSection(flow: Flow, label: string, builder: (flow: Flow) => void, hi
 
 function boundDescription(flow: Flow, getter: () => (string | Nil), parent?: HTMLElement): HTMLElement {
     let container = flow.elem(parent, "div", { className: "settingDescription" });
+    flow.bind(() => container.innerHTML = getter() ?? "");
+    flow.conditionalStyle(container, "noDisp", () => getter() == "");
+    return container;
+}
+
+function boundWarning(flow: Flow, getter: () => (string | Nil), parent?: HTMLElement): HTMLElement {
+    let container = flow.elem(parent, "div", { className: "settingWarning" });
     flow.bind(() => container.innerHTML = getter() ?? "");
     flow.conditionalStyle(container, "noDisp", () => getter() == "");
     return container;
