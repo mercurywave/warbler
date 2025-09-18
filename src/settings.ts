@@ -11,6 +11,7 @@ interface ISettings {
     cleanAudioAi: IAIFunction;
 
     backendOverride?: string | Nil;
+    backendUniqueId?: string | Nil;
 }
 
 export interface ILlmServer {
@@ -26,7 +27,9 @@ export interface IAIFunction {
     systemPrompt?: string;
 }
 
-export interface IBackendFunctions {
+export interface IBackendSettings {
+    version: number;
+    uniqueId: string;
     ASR?: boolean;
 }
 
@@ -39,7 +42,7 @@ export interface IService {
 
 let _config: ISettings;
 let _isStaticWebPage: boolean = false;
-let _backendFuncs: IBackendFunctions | Nil = null;
+let _backendFuncs: IBackendSettings | Nil = null;
 let _pollBackendJob: Deferred<boolean> | Nil = null;
 
 export namespace Config {
@@ -66,7 +69,7 @@ export namespace Config {
     export function setBackendOverride(url: string | Nil) { _config.backendOverride = url; }
 
 
-    export function isOnline(): boolean { return !!_backendFuncs; }
+    export function isOnline(): boolean { return _backendFuncs?.uniqueId == _config?.backendUniqueId; }
     export function isStaticWebPage(): boolean { return _isStaticWebPage; }
     export function isCheckingOnlineStatus(): boolean { return !!_pollBackendJob; }
 
@@ -107,7 +110,8 @@ export namespace Config {
                 let result = await Rest.get(url, "v1/config");
                 success = result.success;
                 if (success) {
-                    _backendFuncs = result.response!!;
+                    _backendFuncs = result.response as any;
+                    console.log("Conection successful", _backendFuncs);
                 }
                 _pollBackendJob.resolve(result.success);
             }
