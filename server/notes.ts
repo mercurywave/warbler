@@ -20,11 +20,12 @@ let _db: DocStore<NoteData> = new DocStore("./data", "notes");
 
 export namespace NoteApis {
 
-    export async function getRecentNotes(req: Request, res: Response): Promise<void> {
+    export async function getRecentNoteEdits(req: Request, res: Response): Promise<void> {
         // return a list of all note IDs updated since the given date
         let { since } = req.query;
-        let dt = new Date(Date.parse(since as string ?? ""));
-        let found = _db.findRecentIds(dt);
+        let num = Date.parse(since as string ?? "");
+        let dt = new Date(isNaN(num) ? 0 : num);
+        let found = await _db.findRecentIds(dt);
         res.json(found);
     }
 

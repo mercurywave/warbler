@@ -1,5 +1,5 @@
 import path, { basename } from "path";
-import fs from "fs";
+import fs, { stat } from "fs";
 import { Deferred, util } from "./util";
 
 export class DocStore<T> {
@@ -56,6 +56,7 @@ export class DocStore<T> {
     public async findRecentIds(since: Date): Promise<string[]> {
         let timestamp = since.getMilliseconds();
         let found: Deferred<string | null>[] = [];
+        let job = new Deferred<void>();
         fs.readdir(this._path, (err, files) => {
             if (err) throw err;
             files.forEach(file => {
@@ -77,7 +78,9 @@ export class DocStore<T> {
                     });
                 }
             });
+            job.resolve();
         });
+        await job;
         let resolved = await Promise.all(found);
         return resolved.filter(s => s != null);
     }
