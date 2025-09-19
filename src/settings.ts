@@ -104,7 +104,7 @@ export namespace Config {
             _isStaticWebPage = true;
         if(!_isStaticWebPage && !_config.primeServerId){
             // first time user
-            _config.primeServerId = getBackendUrl(true);
+            _config.primeServerId = _backendFuncs?.uniqueId;
             Save();
         }
     }
