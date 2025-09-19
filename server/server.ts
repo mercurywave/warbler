@@ -17,7 +17,7 @@ const upload = multer();
 
 if (!process.env.ENABLE_CORS) app.use(cors());
 
-app.use(express.static(path.join(__dirname, 'dist')));
+app.use(express.static(path.join(__dirname, '../dist')));
 app.use(express.json());
 
 if(!fs.existsSync("./data")){
@@ -27,7 +27,7 @@ if(!fs.existsSync("./data")){
 
 // fallback to index.html for SPA routing
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
 
 app.get('/v1/config', apiGetConfig);
