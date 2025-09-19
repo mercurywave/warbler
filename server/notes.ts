@@ -29,9 +29,21 @@ export namespace NoteApis {
         res.json(found);
     }
 
+    export async function postLoadNotes(req: Request, res: Response): Promise<void> {
+        const VArr = z.array(z.guid());
+        let parse = VArr.safeParse(req.body);
+        if (parse.success) {
+            let arr: string[] = parse.data;
+            let loaded = arr.map(i => _db.load(i)).filter(i => i != null);
+            res.json(loaded);
+        } else {
+            console.error(z.treeifyError(parse.error));
+            res.status(400).json({ error: parse.error });
+        }
+    }
+
     export async function postUpdateNotes(req: Request, res: Response): Promise<void> {
         const VArr = z.array(VNoteData);
-        console.log(req.body);
         let parse = VArr.safeParse(req.body);
         if (parse.success) {
             let arr: NoteData[] = parse.data;
