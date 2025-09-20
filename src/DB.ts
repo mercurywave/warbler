@@ -4,6 +4,7 @@ import { Note, NoteData, NoteMeta } from "./note";
 import { Config } from "./settings";
 import { Deferred, Nil, Rest, util } from "./util";
 import { Flow } from "./flow";
+import ur from "zod/v4/locales/ur.js";
 
 export namespace DB {
     let _db: IDBDatabase;
@@ -30,8 +31,12 @@ export namespace DB {
         };
         await future;
 
-        await LoadFolders();
-        await LoadNotes();
+        if(Config.isOnline()){
+            await ServerSync();
+        } else {
+            await LoadFolders();
+            await LoadNotes();
+        }
     }
 
     async function LoadFolders(): Promise<void> {
@@ -51,7 +56,7 @@ export namespace DB {
         }
         for (const note of _notes) {
             // relationship is stored on the parent before the child is stored
-            // this just quietly papers over that, though may cause a headach someday
+            // this just quietly papers over that, though may cause a headache someday
             note._meta.data.childrenIds = note._meta.data.childrenIds.filter(c => !!GetNoteById(c));
         }
     }
@@ -88,7 +93,6 @@ export namespace DB {
         };
         let meta: NoteMeta = {
             data: inner,
-            fileName: now,
             id: id,
             needsFileSave: false,
         }
@@ -192,6 +196,76 @@ export namespace DB {
         request.onsuccess = () => { future.resolve(); };
         await future;
         _setDbDirty();
+    }
+
+    export async function ServerSync(): Promise<void> {
+        if (!Config.isOnline()) return;
+        await ServerSaveFolders();
+        await ServerSaveNotes();
+
+        let str = window.localStorage.getItem("warbler-cache");
+        let num = Date.parse(str as string ?? "");
+        let since = new Date(isNaN(num) ? 0 : num);
+        let future = new Date(new Date().getTime() - 30 * 60 * 1000);
+        await PullServerToDbFolders();
+        await PullServerToDbNotes(since);
+        window.localStorage.setItem("warbler-cache", future.toUTCString());
+    }
+
+    async function PullServerToDbNotes(since: Date) {
+        let url = Config.getBackendUrl();
+        if (!url || !Config.isOnline()) return;
+
+        let ids = await pullServerNoteIds(since);
+
+        let result = await Rest.post(url, "v1/loadNotes", ids);
+        if (result.success) {
+            let futures: Promise<void>[] = [];
+            for (const response of result.response as NoteData[]) {
+                let note = DB.GetNoteById(response.id);
+                if (note) {
+                    note._meta.data = response;
+                    note._meta.needsFileSave = false;
+                } else {
+                    note = new Note({
+                        data: response,
+                        id: response.id,
+                        needsFileSave: false,
+                    });
+                }
+                futures.push(saveHelper("notes", note._meta));
+            }
+            await Promise.all(futures);
+            await LoadNotes();
+        }
+    }
+    async function pullServerNoteIds(since: Date): Promise<string[]> {
+        let url = Config.getBackendUrl();
+        if (!url || !Config.isOnline()) return [];
+        let result = await Rest.get(url, "v1/recentNoteEdits", { since: since.toUTCString() });
+        if (result.success) {
+            return result.response as string[];
+        }
+        return [];
+    }
+
+    async function PullServerToDbFolders() {
+        let url = Config.getBackendUrl();
+        if (!url || !Config.isOnline()) return;
+        let result = await Rest.get(url, "v1/getFolders");
+        if (result.success) {
+            for (const response of result.response as FolderData[]) {
+                let folder = DB.GetFolderById(response.id);
+                if (folder) {
+                    folder._data = response;
+                    folder._needsServerSave = false;
+                } else {
+                    folder = new Folder(response);
+                }
+                await saveHelper("folders", folder._data);
+            }
+            LoadFolders();
+        }
     }
 
     export function AnyNotesToServerSave(): boolean { return GetNotesToServerSave().length > 0; }

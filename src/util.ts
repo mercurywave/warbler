@@ -76,9 +76,15 @@ export namespace util {
 }
 
 export namespace Rest {
-    export async function get<T>(baseUrl: string, path: string): Promise<OResult<T>> {
+    export async function get<T>(baseUrl: string, path: string, params?: { [key: string]: string })
+        : Promise<OResult<T>> {
         if (!baseUrl) return new OResult(false, 'URL is required');
         let url = util.appendPathToUrl(baseUrl, path);
+        for (const key in params) {
+            if (params.hasOwnProperty(key)) {
+                url.searchParams.append(key, params[key]);
+            }
+        }
         try {
             const response = await fetch(url, {
                 method: 'GET',

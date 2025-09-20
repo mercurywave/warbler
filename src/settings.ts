@@ -133,7 +133,7 @@ export namespace Config {
                 success = result.success;
                 if (success) {
                     _backendFuncs = result.response as any;
-                    console.log("Conection successful", _backendFuncs);
+                    console.log("Connection successful", _backendFuncs);
                 }
                 _pollBackendJob.resolve(result.success);
             }

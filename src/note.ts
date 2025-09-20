@@ -122,7 +122,6 @@ export class PendingTranscription {
 // main interface, stored in indexdb
 export interface NoteMeta {
     id: string;
-    fileName: string;
     data: NoteData;
     needsFileSave: boolean;
 }
