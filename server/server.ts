@@ -20,7 +20,7 @@ if (!process.env.ENABLE_CORS) app.use(cors());
 app.use(express.static(path.join(__dirname, '../dist')));
 app.use(express.json());
 
-if(!fs.existsSync("./data")){
+if (!fs.existsSync("./data")) {
     fs.mkdirSync("./data");
     console.log("data directory created");
 }

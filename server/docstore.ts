@@ -25,11 +25,23 @@ export class DocStore<T> {
         // That only matters if you use this for some sort of multi-user worfklow
         // So I'm calling this a rainy-day project and moving on.
         if (fs.existsSync(file)) {
-            curr = JSON.parse(fs.readFileSync(file) as any);
+            try {
+                curr = JSON.parse(fs.readFileSync(file) as any);
+            } catch (e) {
+                console.log(id);
+                console.error(e);
+                curr = undefined;
+            }
         }
-        let [output, diff] = handler(curr);
-        fs.writeFileSync(file, JSON.stringify(output));
-        return [output, diff];
+        try {
+            let [output, diff] = handler(curr);
+            fs.writeFileSync(file, JSON.stringify(output));
+            return [output, diff];
+        } catch (e) {
+            console.log(id);
+            console.error(e);
+            throw e;
+        }
     }
 
     public load(id: string): T | null {
