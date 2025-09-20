@@ -3,6 +3,7 @@ import { Folder, FolderData } from "./folder";
 import { Note, NoteData, NoteMeta } from "./note";
 import { Config } from "./settings";
 import { Deferred, Nil, Rest, util } from "./util";
+import { Flow } from "./flow";
 
 export namespace DB {
     let _db: IDBDatabase;
@@ -119,6 +120,7 @@ export namespace DB {
         setTimeout(SyncNotes, 100);
     }
 
+    type ISyncResponse = [NoteData, string[]];
     async function SyncNotes() {
         let dirty = GetNotesToServerSave();
         if (!dirty || !dirty.length || !Config.isOnline()) return;
@@ -129,8 +131,15 @@ export namespace DB {
             if (url) {
                 let result = await Rest.post(url, "v1/updateNotes", toSync);
                 if (result.success) {
-                    // TODO: update local / conflict handling
-                    console.log("Notes Saved", result.response);
+                    for (const response of result.response as ISyncResponse[]) {
+                        let note = DB.GetNoteById(response[0].id);
+                        if (note) {
+                            note._meta.data = response[0];
+                            note._meta.needsFileSave = false;
+                            await saveHelper("notes", note._meta);
+                        }
+                    }
+                    Flow.Dirty();
                 }
             }
         } catch (e) { console.error(e); }
