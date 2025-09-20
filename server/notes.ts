@@ -47,7 +47,11 @@ export namespace NoteApis {
         let parse = VArr.safeParse(req.body);
         if (parse.success) {
             let arr: NoteData[] = parse.data;
-            let saveResult = arr.map(n => updateNote(n));
+            let saveResult = arr.map(n => {
+                try {
+                    return updateNote(n);
+                } catch (e) { return [n, [`Error Saving - ${e}`]]; }
+            });
             res.json(saveResult);
         } else {
             console.error(z.treeifyError(parse.error));

@@ -9,6 +9,7 @@ import axios from "axios";
 import FormData from "form-data";
 import { apiGetConfig } from "./config";
 import { NoteApis } from "./notes";
+import { FolderApis } from "./folders";
 
 dotenv.config();
 const app = express();
@@ -20,7 +21,7 @@ if (!process.env.ENABLE_CORS) app.use(cors());
 app.use(express.static(path.join(__dirname, '../dist')));
 app.use(express.json());
 
-if(!fs.existsSync("./data")){
+if (!fs.existsSync("./data")) {
     fs.mkdirSync("./data");
     console.log("data directory created");
 }
@@ -33,10 +34,13 @@ app.get('/', (req, res) => {
 app.get('/v1/config', apiGetConfig);
 
 app.get('/v1/recentNoteEdits', NoteApis.getRecentNoteEdits);
-
 app.post('/v1/loadNotes', NoteApis.postLoadNotes);
-
 app.post('/v1/updateNotes', NoteApis.postUpdateNotes);
+
+
+app.get('/v1/getFolders', FolderApis.getFolders);
+app.post('/v1/updateFolders', FolderApis.postUpdateFolders);
+
 
 app.post('/v1/asr', upload.single('audio_file'), async (req, res) => {
     let type = process.env.ASR_TYPE;
