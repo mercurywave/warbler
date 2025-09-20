@@ -6,6 +6,8 @@ import { Deferred, Nil, Rest, util } from "./util";
 import { Flow } from "./flow";
 import ur from "zod/v4/locales/ur.js";
 
+const NOTES = 'notes';
+const FOLDERS = 'folders';
 export namespace DB {
     let _db: IDBDatabase;
     let _notes: Note[] = [];
@@ -17,8 +19,8 @@ export namespace DB {
 
         request.onupgradeneeded = (ev) => {
             let db = request.result;
-            let noteStore = db.createObjectStore("notes", { keyPath: "id" });
-            let folderStore = db.createObjectStore("folders", { keyPath: "id" });
+            let noteStore = db.createObjectStore(NOTES, { keyPath: "id" });
+            let folderStore = db.createObjectStore(FOLDERS, { keyPath: "id" });
         };
 
         request.onsuccess = () => {
@@ -31,7 +33,7 @@ export namespace DB {
         };
         await future;
 
-        if(Config.isOnline()){
+        if (Config.isOnline()) {
             await ServerSync();
         } else {
             await LoadFolders();
@@ -40,7 +42,7 @@ export namespace DB {
     }
 
     async function LoadFolders(): Promise<void> {
-        let metas = await loadHelper<FolderData>("folders");
+        let metas = await loadHelper<FolderData>(FOLDERS);
         _folders = [];
         for (const m of metas) {
             let folder = new Folder(m);
@@ -48,7 +50,7 @@ export namespace DB {
         }
     }
     async function LoadNotes(): Promise<void> {
-        let metas = await loadHelper<NoteMeta>("notes");
+        let metas = await loadHelper<NoteMeta>(NOTES);
         _notes = [];
         for (const m of metas) {
             let note = new Note(m);
@@ -118,7 +120,7 @@ export namespace DB {
     }
 
     export async function SaveNote(note: Note): Promise<void> {
-        await saveHelper("notes", note._meta);
+        await saveHelper(NOTES, note._meta);
         note._needsDbSave = false;
         note._meta.needsFileSave = true;
         setTimeout(ServerSaveNotes, 100);
@@ -143,7 +145,7 @@ export namespace DB {
                         if (note) {
                             note._meta.data = response[0];
                             note._meta.needsFileSave = false;
-                            await saveHelper("notes", note._meta);
+                            await saveHelper(NOTES, note._meta);
                         }
                     }
                     Flow.Dirty();
@@ -155,7 +157,7 @@ export namespace DB {
     }
 
     export async function SaveFolder(folder: Folder): Promise<void> {
-        await saveHelper("folders", folder._data);
+        await saveHelper(FOLDERS, folder._data);
         folder._needsDbSave = false;
         setTimeout(ServerSaveFolders, 100);
     }
@@ -176,7 +178,7 @@ export namespace DB {
                         if (folder) {
                             folder._data = response[0];
                             folder._needsServerSave = false;
-                            await saveHelper("folders", folder._data);
+                            await saveHelper(FOLDERS, folder._data);
                         }
                     }
                     Flow.Dirty();
@@ -198,6 +200,16 @@ export namespace DB {
         _setDbDirty();
     }
 
+    export async function FullServerRefresh(): Promise<void> {
+        _dumpLocalDb(NOTES);
+        _dumpLocalDb(FOLDERS);
+        _notes = [];
+        _folders = [];
+        setServerCache(null);
+        await ServerSync();
+        Flow.Dirty();
+    }
+
     export async function ServerSync(): Promise<void> {
         if (!Config.isOnline()) return;
         await ServerSaveFolders();
@@ -209,7 +221,14 @@ export namespace DB {
         let future = new Date(new Date().getTime() - 30 * 60 * 1000);
         await PullServerToDbFolders();
         await PullServerToDbNotes(since);
-        window.localStorage.setItem("warbler-cache", future.toUTCString());
+        setServerCache(future);
+    }
+
+    function setServerCache(since: Date | Nil) {
+        if (since)
+            window.localStorage.setItem("warbler-cache", since.toUTCString());
+        else
+            window.localStorage.removeItem("warbler-cache");
     }
 
     async function PullServerToDbNotes(since: Date) {
@@ -233,7 +252,7 @@ export namespace DB {
                         needsFileSave: false,
                     });
                 }
-                futures.push(saveHelper("notes", note._meta));
+                futures.push(saveHelper(NOTES, note._meta));
             }
             await Promise.all(futures);
             await LoadNotes();
@@ -262,7 +281,7 @@ export namespace DB {
                 } else {
                     folder = new Folder(response);
                 }
-                await saveHelper("folders", folder._data);
+                await saveHelper(FOLDERS, folder._data);
             }
             LoadFolders();
         }
@@ -307,6 +326,16 @@ export namespace DB {
         _setDbDirty();
     }
 
+    async function _dumpLocalDb(db: string) {
+        const transaction = _db.transaction([db], 'readwrite');
+        const objectStore = transaction.objectStore(db);
+        let future = new Deferred();
+        const request = objectStore.clear();
+        request.onsuccess = () => future.resolve();
+        request.onerror = (event) => future.reject((event.target as IDBRequest).error);
+        await future;
+        console.log(`table ${db} dropped!`);
+    }
 
 }
 

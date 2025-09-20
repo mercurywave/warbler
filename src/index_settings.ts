@@ -90,11 +90,11 @@ function mkSyncServer(flow: Flow) {
     flow.conditionalStyle(btSync, "noDisp", () => !(Config.canChangePrimaryServer() && DB.AnyNotesToServerSave()));
     btSync.addEventListener("click", () => {
         let uid = Config.getConnectedServerId();
-        if(uid) {
+        if (uid) {
             console.log(`Setting primary server to "${uid}"`)
             Config.setPrimaryServer(uid);
         }
-        // TODO: Save then reload from server
+        DB.ServerSync();
     });
 
     let btPull = flow.child<HTMLButtonElement>("button", {
@@ -113,12 +113,13 @@ function mkSyncServer(flow: Flow) {
     flow.conditionalStyle(btPull, "noDisp", () => !Config.canChangePrimaryServer());
     btPull.addEventListener("click", () => {
         let uid = Config.getConnectedServerId();
-        if(uid) {
+        if (uid) {
             console.log(`Setting primary server to "${uid}"`)
             Config.setPrimaryServer(uid);
         }
-        // TODO: reload from server
+        DB.FullServerRefresh();
     });
+    mkServerManagement(flow);
 }
 
 function mkBackendUrl(flow: Flow) {
@@ -136,6 +137,20 @@ function mkBackendUrl(flow: Flow) {
     );
     flow.bind(() => input.disabled = Config.isCheckingOnlineStatus());
     boundSpan(flow, () => Config.isCheckingOnlineStatus() ? 'Testing connection...' : '', container);
+}
+
+function mkServerManagement(flow: Flow) {
+    let [container, header, body] = simpleCollapsableSection(flow, `Server Management`);
+    flow.conditionalStyle(container, "noDisp", () => !Config.isOnline());
+
+    let btPull = flow.elem<HTMLButtonElement>(body, "button", {
+        type: "button",
+        innerText: "Discard All Local Data and Refresh From Server",
+        className: "btCaution",
+    });
+    btPull.addEventListener("click", () => {
+        DB.FullServerRefresh();
+    });
 }
 
 function mkTranscription(flow: Flow) {
@@ -338,4 +353,23 @@ function boundSpan(flow: Flow, getter: () => (string | Nil), parent?: HTMLElemen
     flow.bind(() => container.innerHTML = getter() ?? "");
     flow.conditionalStyle(container, "noDisp", () => getter() == "");
     return container;
+}
+
+// starts collapsed and manages collapse state itself
+function simpleCollapsableSection(flow: Flow, title: string, parent?: HTMLElement)
+    : [container: HTMLElement, header: HTMLElement, body: HTMLElement] {
+
+    let container = flow.elem(parent, "div", { className: "collapser" });
+    let header = flow.elem(container, "div", { className: "collapseHead" });
+    let label = flow.elem(header, "span", { innerText: title });
+    let btToggle = flow.elem(header, "button", {
+        innerText: "▶",
+        className: "btCollapse",
+    });
+    let body = flow.elem(container, "div", { className: "collapseBody noDisp" });
+    header.addEventListener('click', () => {
+        let hidden = body.classList.toggle('noDisp');
+        btToggle.innerText = hidden ? '▶' : '▼';
+    });
+    return [container, header, body];
 }
