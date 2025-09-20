@@ -126,6 +126,7 @@ export namespace DB {
         setTimeout(ServerSaveNotes, 100);
     }
 
+    type ISaveNote = [note: NoteData, anscestor: string];
     type ISyncResponse<T> = [T, string[]];
     let __synchingNotes: Deferred<void> | Nil = null;
     async function ServerSaveNotes() {
@@ -133,18 +134,21 @@ export namespace DB {
         let dirty = GetNotesToServerSave();
         if (!dirty || !dirty.length || !Config.isOnline()) return;
         __synchingNotes = new Deferred();
-        let toSync = dirty.map(n => n.data);
+        let toSync: ISaveNote[] = dirty.map(n => [n.data, n._meta.lastSyncText]);
+        console.log(toSync[0]);
 
         try {
             let url = Config.getBackendUrl();
             if (url) {
                 let result = await Rest.post(url, "v1/updateNotes", toSync);
                 if (result.success) {
+                    console.log(result.response);
                     for (const response of result.response as ISyncResponse<NoteData>[]) {
                         let note = DB.GetNoteById(response[0].id);
                         if (note) {
                             note._meta.data = response[0];
                             note._meta.needsFileSave = false;
+                            note._meta.lastSyncText = note.text;
                             await saveHelper(NOTES, note._meta);
                         }
                     }
