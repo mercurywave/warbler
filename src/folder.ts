@@ -5,12 +5,14 @@ import { DB } from "./DB";
 export class Folder {
     public _data: FolderData;
     public _needsDbSave: boolean = false;
+    public _needsServerSave: boolean = false; // TODO: this should probably be saved to the db, or reconsidered
     public constructor(meta: FolderData) {
         this._data = meta;
     }
 
     public FlagDirty(): void{
         this._needsDbSave = true;
+        this._needsServerSave = true;
         DB.SaveFolder(this);
     }
 

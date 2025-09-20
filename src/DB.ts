@@ -117,13 +117,16 @@ export namespace DB {
         await saveHelper("notes", note._meta);
         note._needsDbSave = false;
         note._meta.needsFileSave = true;
-        setTimeout(SyncNotes, 100);
+        setTimeout(ServerSaveNotes, 100);
     }
 
-    type ISyncResponse = [NoteData, string[]];
-    async function SyncNotes() {
+    type ISyncResponse<T> = [T, string[]];
+    let __synchingNotes: Deferred<void> | Nil = null;
+    async function ServerSaveNotes() {
+        await __synchingNotes;
         let dirty = GetNotesToServerSave();
         if (!dirty || !dirty.length || !Config.isOnline()) return;
+        __synchingNotes = new Deferred();
         let toSync = dirty.map(n => n.data);
 
         try {
@@ -131,7 +134,7 @@ export namespace DB {
             if (url) {
                 let result = await Rest.post(url, "v1/updateNotes", toSync);
                 if (result.success) {
-                    for (const response of result.response as ISyncResponse[]) {
+                    for (const response of result.response as ISyncResponse<NoteData>[]) {
                         let note = DB.GetNoteById(response[0].id);
                         if (note) {
                             note._meta.data = response[0];
@@ -143,11 +146,41 @@ export namespace DB {
                 }
             }
         } catch (e) { console.error(e); }
+        __synchingNotes.resolve();
+        __synchingNotes = null;
     }
 
     export async function SaveFolder(folder: Folder): Promise<void> {
         await saveHelper("folders", folder._data);
         folder._needsDbSave = false;
+        setTimeout(ServerSaveFolders, 100);
+    }
+    let __synchingFolders: Deferred<void> | Nil = null;
+    async function ServerSaveFolders() {
+        let dirty = AllFolders().filter(f => f._needsServerSave);
+        if (__synchingFolders || !dirty.length || !Config.isOnline()) return;
+        __synchingFolders = new Deferred();
+        let toSync = dirty.map(f => f._data);
+
+        try {
+            let url = Config.getBackendUrl();
+            if (url) {
+                let result = await Rest.post(url, "v1/updateFolders", toSync);
+                if (result.success) {
+                    for (const response of result.response as ISyncResponse<FolderData>[]) {
+                        let folder = DB.GetFolderById(response[0].id);
+                        if (folder) {
+                            folder._data = response[0];
+                            folder._needsServerSave = false;
+                            await saveHelper("folders", folder._data);
+                        }
+                    }
+                    Flow.Dirty();
+                }
+            }
+        } catch (e) { console.error(e); }
+        __synchingFolders.resolve();
+        __synchingFolders = null;
     }
 
     async function saveHelper<T>(db: string, meta: T): Promise<void> {
