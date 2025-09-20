@@ -124,6 +124,7 @@ export interface NoteMeta {
     id: string;
     data: NoteData;
     needsFileSave: boolean;
+    lastSyncText: string;
 }
 
 //what is saved to files
@@ -137,5 +138,4 @@ export interface NoteData {
     childrenIds: string[];
     deleted?: boolean;
     creationUtc: string;
-    editsUtc: string[];
 }

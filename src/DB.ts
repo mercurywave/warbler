@@ -87,7 +87,6 @@ export namespace DB {
         let inner: NoteData = {
             childrenIds: [],
             creationUtc: now,
-            editsUtc: [],
             id: id,
             tags: [],
             text: "",
@@ -97,6 +96,7 @@ export namespace DB {
             data: inner,
             id: id,
             needsFileSave: false,
+            lastSyncText: '',
         }
         let note = new Note(meta);
         if (folder) note.data.folderId = folder.id;
@@ -250,6 +250,7 @@ export namespace DB {
                         data: response,
                         id: response.id,
                         needsFileSave: false,
+                        lastSyncText: response.text,
                     });
                 }
                 futures.push(saveHelper(NOTES, note._meta));
