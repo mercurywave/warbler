@@ -198,6 +198,17 @@ export class Flow {
         return cFlow._root;
     }
 
+    public placeholder(builder: (flow: Flow) => void, parent: HTMLElement, ifRender: () => boolean) {
+        this.bind(() => {
+            parent.innerHTML = '';
+            if (!ifRender()) return;
+            if (!this._root) throw 'root not set';
+            let cFlow = new Flow(this, parent);
+            builder(cFlow);
+            if (!cFlow._root) throw 'builder did not set an element';
+        });
+    }
+
     // bind to an object that might be swapped out, like a view
     public bindObject<T>(getter: () => (T | null), handler: (flow: Flow, elem: T) => void, host?: HTMLElement | null): BoundList<T> {
         return this.bindArray(() => {

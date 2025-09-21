@@ -33,11 +33,10 @@ export namespace DB {
         };
         await future;
 
+        await LoadFolders();
+        await LoadNotes();
         if (Config.isOnline()) {
             await ServerSync();
-        } else {
-            await LoadFolders();
-            await LoadNotes();
         }
     }
 
@@ -120,10 +119,13 @@ export namespace DB {
     }
 
     export async function SaveNote(note: Note): Promise<void> {
+        await SaveNoteLocally(note);
+        setTimeout(ServerSaveNotes, 100);
+    }
+    export async function SaveNoteLocally(note: Note): Promise<void> {
         await saveHelper(NOTES, note._meta);
         note._needsDbSave = false;
         note._meta.needsFileSave = true;
-        setTimeout(ServerSaveNotes, 100);
     }
 
     type ISaveNote = [note: NoteData, anscestor: string];
@@ -135,20 +137,20 @@ export namespace DB {
         if (!dirty || !dirty.length || !Config.isOnline()) return;
         __synchingNotes = new Deferred();
         let toSync: ISaveNote[] = dirty.map(n => [n.data, n._meta.lastSyncText]);
-        console.log(toSync[0]);
 
         try {
             let url = Config.getBackendUrl();
             if (url) {
                 let result = await Rest.post(url, "v1/updateNotes", toSync);
                 if (result.success) {
-                    console.log(result.response);
                     for (const response of result.response as ISyncResponse<NoteData>[]) {
-                        let note = DB.GetNoteById(response[0].id);
+                        let [resNote, conflicts] = response;
+                        let note = DB.GetNoteById(resNote.id);
                         if (note) {
-                            note._meta.data = response[0];
+                            note._meta.data = resNote;
                             note._meta.needsFileSave = false;
                             note._meta.lastSyncText = note.text;
+                            note._meta.conflicts = conflicts.length > 0 ? conflicts : undefined;
                             await saveHelper(NOTES, note._meta);
                         }
                     }

@@ -335,6 +335,28 @@ body {
     font-weight: 500;
 }
 
+.confBox{
+    border: 1px solid #999;
+    border-radius: 4px;
+    padding: 8px;
+}
+.conflict{
+    background-color: #5e2112;
+    border: 1px dashed #ddb8af;
+    padding: 2px 8px 5px 8px;
+    margin: 4px;
+    font-size: smaller;
+}
+.lblWarning{
+    font-size: smaller;
+    color: #de8b38;
+    margin: 10px 0;
+}
+.btClearConflicts{
+    margin: 0 10px;
+}
+
+
 .bubbleFooter {
     display: flex;
     flex-direction: row;

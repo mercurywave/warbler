@@ -125,8 +125,32 @@ function mkNoteControl(flow: Flow, note: Note) {
     let recordings = flow.child("div");
     flow.bindArray(() => note._pendingAudio, Speech.mkRecordWidget, recordings);
 
+    let conflicts = flow.child("div");
+    flow.placeholder((f) => mkConflictResolver(f, note), conflicts, () => note.isConflicted);
+
     let footer = flow.child("div", { className: "bubbleFooter" });
     mkNoteFooter(flow, footer, note);
+}
+
+function mkConflictResolver(flow: Flow, note: Note) {
+    let parent = flow.child("div", {className: 'confBox'});
+    let lbl = flow.elem(parent, "span", {
+        className: "lblWarning",
+        innerText: `There was a problem syncing this note. These changes failed to apply:`
+    });
+    let btClear = flow.elem<HTMLButtonElement>(parent, "button", {
+        type: "button",
+        innerText: "Clear Conflicts",
+        className: "btClearConflicts",
+    });
+    btClear.addEventListener('click', () => note.clearConflicts());
+
+    let container = flow.elem(parent, "div", { className: "conflicts" });
+    flow.bindArray(() => note.conflicts, mkConflictBox, container);
+}
+
+function mkConflictBox(flow: Flow, text: string) {
+    flow.root("div", { className: 'conflict', innerText: text });
 }
 
 function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {

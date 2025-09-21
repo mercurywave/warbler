@@ -83,6 +83,14 @@ export class Note {
         this.FlagDirty();
         Flow.Dirty();
     }
+
+    public get conflicts(): string[] { return this._meta.conflicts ?? []; }
+    public get isConflicted(): boolean { return (this._meta.conflicts?.length ?? 0) > 0; }
+    public clearConflicts() {
+        this._meta.conflicts = undefined;
+        Flow.Dirty();
+        DB.SaveNoteLocally(this);
+    }
 }
 
 export class PendingTranscription {
@@ -125,6 +133,7 @@ export interface NoteMeta {
     data: NoteData;
     needsFileSave: boolean;
     lastSyncText: string;
+    conflicts?: string[];
 }
 
 //what is saved to files
