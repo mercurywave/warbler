@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import * as z from "zod";
 import { DocStore } from "./docstore";
 import { util } from "./util";
+import { autoThreeWayTextMerge } from './diff';
 
 const VNoteData = z.object({
     v: z.number(),
@@ -43,14 +44,15 @@ export namespace NoteApis {
     }
 
     export async function postUpdateNotes(req: Request, res: Response): Promise<void> {
-        const VArr = z.array(VNoteData);
-        let parse = VArr.safeParse(req.body);
+        const VReq = z.array(z.tuple([VNoteData, z.string()]));
+        let parse = VReq.safeParse(req.body);
         if (parse.success) {
-            let arr: NoteData[] = parse.data;
-            let saveResult = arr.map(n => {
+            let arr: [NoteData, string][] = parse.data;
+            let saveResult = arr.map(o => {
+                let [note, anscestor] = o;
                 try {
-                    return updateNote(n);
-                } catch (e) { return [n, [`Error Saving - ${e}`]]; }
+                    return updateNote(note, anscestor);
+                } catch (e) { return [note, [`Error Saving - ${e}`]]; }
             });
             res.json(saveResult);
         } else {
@@ -60,8 +62,10 @@ export namespace NoteApis {
     }
 }
 
-function updateNote(note: NoteData): [NoteData, string[]] {
+function updateNote(note: NoteData, anscestor: string): [NoteData, string[]] {
     return _db.saveMerge(note.id, (curr) => {
-        return [note, []];
+        let [text, conflicts] = autoThreeWayTextMerge(anscestor, curr?.text ?? '', note.text);
+        note.text = text;
+        return [note, conflicts];
     });
 }

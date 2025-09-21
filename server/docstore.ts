@@ -66,7 +66,7 @@ export class DocStore<T> {
     }
 
     public async findRecentIds(since: Date): Promise<string[]> {
-        let timestamp = since.getMilliseconds();
+        let timestamp = since.getTime();
         let found: Deferred<string | null>[] = [];
         let job = new Deferred<void>();
         fs.readdir(this._path, (err, files) => {
