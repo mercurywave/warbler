@@ -111,7 +111,6 @@ export namespace DB {
             title: "",
             v: 1,
             creationUtc: now,
-            editsUtc: [],
         };
         let folder = new Folder(inner);
         _folders.push(folder);
