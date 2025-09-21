@@ -314,6 +314,7 @@ export namespace DB {
     export function AllParents(): Note[] { return AllNotes().filter(n => !n.isChild); }
     export function Unsorted(): Note[] { return AllParents().filter(n => !n.folder); }
     export function DeletedNotes(): Note[] { return _notes.filter(n => n.isDeleted); }
+    export function ConflictedNotes(): Note[] { return _notes.filter(n => n.isConflicted); }
 
     export function AllFolders(): Folder[] { return _folders; }
 

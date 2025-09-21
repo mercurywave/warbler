@@ -64,7 +64,7 @@ export class ViewData {
 }
 
 export enum eView {
-    None, All, Unsorted, Folder, Tag, Settings, Deleted, SingleNote
+    None, All, Unsorted, Folder, Tag, Settings, Deleted, SingleNote, Conflicted
 };
 
 export enum eSettingsPage {
@@ -126,6 +126,14 @@ export namespace View {
         reset(eView.SingleNote);
         _data.setChronResults([note]);
         _data.title = "Note";
+        finalize();
+    }
+
+    export function Conflicted() {
+        reset(eView.Conflicted);
+        _data.setChronResults(DB.ConflictedNotes());
+        _data.title = "Conflicted";
+        _data.groupByParents = false;
         finalize();
     }
 

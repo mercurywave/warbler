@@ -64,6 +64,10 @@ Route.Register("all", (flow) => {
     rendNotesList(flow);
 }, () => View.ShowAll(), preLoadNotes, true);
 
+Route.Register("conflicted", (flow) => {
+    rendNotesList(flow);
+}, () => View.Conflicted(), preLoadNotes);
+
 Route.Register("unsorted", (flow) => {
     rendNotesList(flow);
 }, () => View.Unsorted(), preLoadNotes);

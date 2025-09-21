@@ -470,11 +470,15 @@ body {
     display: block;
     width: 95%;
     text-align: left;
+    border-radius: 6px;
+}
+
+.btNavigate.btConflicts{
+    background-color: #b97714;
 }
 
 .btNavigate:hover {
     outline: 1px solid #3C4A56;
-    border-radius: 6px;
 }
 
 #folders {
