@@ -1,6 +1,13 @@
 
 
-type DiffOp = { type: 'equal' | 'insert' | 'delete' | 'finished', lines: string[] };
+type DiffOp = {
+    type: 'equal' | 'insert' | 'delete' | 'edit' | 'finished',
+    lines: DiffLine[]
+};
+type DiffLine = {
+    originalLine: number,
+    text: string
+}
 enum eSplitDepth { file, paragraph, sentence }
 
 /**
@@ -16,7 +23,11 @@ export function autoThreeWayTextMerge(original: string, current: string, propose
     return [merged.join('\n'), discarded];
 }
 
-function conflictHandler(currDepth: eSplitDepth, current: string, proposed: string): [merged: string, discarded: string[]] {
+function conflictHandler(currDepth: eSplitDepth, original: string, current: string, proposed: string): [merged: string, discarded: string[]] {
+    if (currDepth === eSplitDepth.sentence) {
+        if (current === proposed) return [proposed, []];
+        return [current, [proposed]];
+    }
     let depth = currDepth == eSplitDepth.file ? eSplitDepth.paragraph : eSplitDepth.sentence;
 
     // TODO: Node doesn't actually seem to know what this is, and I don't really want to deal with that
@@ -27,122 +38,122 @@ function conflictHandler(currDepth: eSplitDepth, current: string, proposed: stri
     // const prop = Array.from(segmenter.segment(proposed)).map(s => s.segment);
 
     let splitter = depth == eSplitDepth.paragraph ? /([^.!?]+[.!?])/g : /\s+/g;
-    const curr = current.split(splitter);
-    const prop = current.split(proposed);
+    const org = splitWithTrail(original, splitter);
+    const curr = splitWithTrail(current, splitter);
+    const prop = splitWithTrail(proposed, splitter);
 
-    let [merged, discarded] = autoThreeWayMerge(depth, [], curr, prop);
-    if(depth == eSplitDepth.sentence && discarded.length > 0) discarded = [proposed];
-    discarded = discarded.filter(s => s.trim() == '');
-    return [merged.join(' '), discarded];
+    let [merged, discarded] = autoThreeWayMerge(depth, org, curr, prop);
+    if (depth == eSplitDepth.sentence && discarded.length > 0) discarded = [proposed];
+    discarded = discarded.filter(s => s.trim() !== '');
+
+    return [merged.join(''), discarded.map(s => s.trim())];
+}
+
+//splits a string, including the actual trailing split characters in each piece so they can be rejoined
+function splitWithTrail(str: string, regex: RegExp) {
+    const result = [];
+    let lastIndex = 0;
+
+    for (const match of Array.from(str.matchAll(regex))) {
+        const endIndex = match.index + match[0].length;
+        result.push(str.slice(lastIndex, endIndex));
+        lastIndex = endIndex;
+    }
+
+    if (lastIndex < str.length) {
+        result.push(str.slice(lastIndex));
+    }
+
+    return result;
+}
+
+// rejoins a string that was split using a regex
+// not actually useful if the number of elements changed, though :\
+function rejoiner(original: string, splitter: RegExp, pieces: string[]): string {
+    let result = '';
+    let i = 0;
+    for (let piece of pieces) {
+        if (i < original.length) {
+            const match = original.match(splitter)![i];
+            if (match) {
+                result += piece + match;
+            }
+        } else {
+            result += piece;
+        }
+        i++;
+    }
+    return result;
 }
 
 function autoThreeWayMerge(depth: eSplitDepth, original: string[], current: string[], proposed: string[]): [merged: string[], discarded: string[]] {
     const curOps = diff(original, current);
     const propOps = diff(original, proposed);
+    let align = alignDiffs(original, curOps, propOps);
+    let merged: string[] = [];
+    let discarded: string[] = [];
 
-    // Pre-collect all proposed insertions for duplicate detection.
-    const propInsertSet = new Set<string>();
-    for (const op of propOps) {
-        if (op.type === 'insert') {
-            for (const line of op.lines) {
-                propInsertSet.add(line);
+    for (const line of align) {
+        let a = line.original;
+        let b = line.current;
+        let c = line.proposed;
+        let bc = b ?? c;
+        //autoMergeLine(depth, merged, discarded, a, b, c);
+
+        let [t1, d1] = getDiffChange(b);
+        let [t2, d2] = getDiffChange(c);
+
+        if (!(d1 || d2)) {
+            if (t1) merged.push(t1);
+        } else if (t1 !== undefined && t2 !== undefined) {
+            if (d1 && d2) {
+                const sim = similarity(t1, t2);
+                if (sim >= 0.25) {
+                    let [m, c] = conflictHandler(depth, a ?? '', t1, t2);
+                    merged.push(m);
+                    discarded.push(...c);
+                } else {
+                    // both differ enough: keep both
+                    merged.push(t1, t2);
+                }
+            } else if (d1) {
+                merged.push(t1);
+            } else if (d2) {
+                merged.push(t2);
             }
+        } else if (t2 !== undefined) {
+            if (!d1)
+                merged.push(t2);
+            else if (a) {
+                merged.push(a);
+                discarded.push(t2);
+            }
+        } else if (t1 !== undefined) {
+            if (!proposed.includes(t1) && d2)
+                merged.push(t1);
         }
     }
-
-    const merged: string[] = [];
-    const discarded: string[] = [];
-
-    let p1 = 0, p2 = 0;
-    let step = 0;
-    while (p1 < curOps.length || p2 < propOps.length) {
-        const op1: DiffOp = p1 < curOps.length
-            ? curOps[p1]
-            : { type: 'finished', lines: [] };
-        const op2: DiffOp = p2 < propOps.length
-            ? propOps[p2]
-            : { type: 'finished', lines: [] };
-
-        // 1. Both equal → advance in sync
-        if (op1.type === 'equal' && op2.type === 'equal') {
-            const n = Math.min(op1.lines.length, op2.lines.length);
-            merged.push(...op1.lines.slice(0, n));
-
-            if (n === op1.lines.length) p1++;
-            else op1.lines = op1.lines.slice(n);
-
-            if (n === op2.lines.length) p2++;
-            else op2.lines = op2.lines.slice(n);
-
-            // 2. Proposed-only insert
-        } else if (op1.type !== 'insert' && op2.type === 'insert') {
-            merged.push(...op2.lines);
-            p2++;
-
-            // 3. Current-only insert (drop if proposed inserts same text elsewhere)
-        } else if (op1.type === 'insert' && op2.type !== 'insert') {
-            for (const line of op1.lines) {
-                if (!propInsertSet.has(line)) {
-                    merged.push(line);
-                }
-            }
-            p1++;
-
-            // 4. Both insert at same point → conflict/merge per similarity
-        } else if (op1.type === 'insert' && op2.type === 'insert') {
-            const len = Math.max(op1.lines.length, op2.lines.length);
-            for (let k = 0; k < len; k++) {
-                const cLine = op1.lines[k];
-                const pLine = op2.lines[k];
-
-                if (cLine !== undefined && pLine !== undefined) {
-                    if (cLine === pLine) {
-                        merged.push(cLine);
-                    }
-                    else {
-                        const sim = similarity(cLine, pLine);
-                        if (sim >= 0.25) {
-                            let [m, c] = conflictHandler(depth, cLine, pLine);
-                            merged.push(m);
-                            discarded.push(...c);
-                        } else {
-                            // both differ enough: keep both
-                            merged.push(cLine, pLine);
-                        }
-                    }
-
-                } else if (cLine !== undefined) {
-                    if (!propInsertSet.has(cLine)) {
-                        merged.push(cLine);
-                    }
-                } else if (pLine !== undefined) {
-                    merged.push(pLine);
-                }
-            }
-            p1++;
-            p2++;
-
-            // 5. Both delete → drop
-        } else if (op1.type === 'delete' && op2.type === 'delete') {
-            p1++; p2++;
-
-            // 6. Current deletes, proposed keeps → drop those lines
-        } else if (op1.type === 'delete') {
-            p1++;
-            if (op2.type === 'equal') p2++;
-
-            // 7. Proposed deletes, current keeps → drop those lines
-        } else if (op2.type === 'delete') {
-            p2++;
-            if (op1.type === 'equal') p1++;
-
-        } else {
-            // Fallback: just advance both
-            p1++; p2++;
-        }
-    }
-
     return [merged, discarded];
+}
+
+function getDiffChange(diff?: FlatDiffLine): [target: string | undefined, isDelta: boolean] {
+    if (!diff) return [undefined, false];
+    switch (diff.type) {
+        case 'delete':
+            return [undefined, true];
+
+        case 'finished':
+            return [undefined, false];
+
+        case 'equal':
+            return [diff.text, false];
+
+        case 'edit':
+        case 'insert':
+            return [diff.text, true];
+
+        default: throw 'diff type not implemented';
+    }
 }
 
 /**
@@ -207,13 +218,13 @@ function diff(original: string[], variant: string[]): DiffOp[] {
     let i = 0, j = 0;
     while (i < m || j < n) {
         if (i < m && j < n && original[i] === variant[j]) {
-            ops.push({ type: 'equal', lines: [original[i]] });
+            ops.push({ type: 'equal', lines: [{ text: original[i], originalLine: i }] });
             i++; j++;
         } else if (j < n && (i === m || dp[i][j + 1] >= dp[i + 1][j])) {
-            ops.push({ type: 'insert', lines: [variant[j]] });
+            ops.push({ type: 'insert', lines: [{ text: variant[j], originalLine: i }] });
             j++;
         } else {
-            ops.push({ type: 'delete', lines: [original[i]] });
+            ops.push({ type: 'delete', lines: [{ text: 'DELE', originalLine: i }] });
             i++;
         }
     }
@@ -229,5 +240,86 @@ function diff(original: string[], variant: string[]): DiffOp[] {
         }
     }
 
-    return grouped;
+    // merge Insert + delete into a single action
+    const editClean: DiffOp[] = [];
+    for (let index = 0; index < grouped.length; index++) {
+        const next = grouped[index + 1];
+        const op = grouped[index];
+        if (next && op.type === 'insert' && next.type === 'delete') {
+            editClean.push({ type: 'edit', lines: [...op.lines] })
+            index++; // skip ahead
+        } else {
+            editClean.push({ type: op.type, lines: [...op.lines] });
+        }
+    }
+
+    return editClean;
+}
+
+type FlatDiffLine = {
+    type: 'equal' | 'insert' | 'delete' | 'edit' | 'finished',
+    originalLine: number,
+    text: string
+}
+type MergeLine = {
+    original?: string,
+    current?: FlatDiffLine
+    proposed?: FlatDiffLine,
+}
+
+function flattenDiffOp(op: DiffOp): FlatDiffLine[] {
+    return op.lines.map(line => {
+        return { ...line, type: op.type };
+    });
+}
+
+/**
+ * Combine the two diffs into an aligned merge
+ * @param original original file line
+ * @param current grouped maps of changes from original to what is on the server now
+ * @param proposed grouped maps of changes from original to proposed changes
+ */
+function alignDiffs(original: string[], current: DiffOp[], proposed: DiffOp[]): MergeLine[] {
+    const result: MergeLine[] = [];
+    let i = 0, j = 0;
+
+    let currFlat: FlatDiffLine[] = current.flatMap(flattenDiffOp);
+    let propFlat: FlatDiffLine[] = proposed.flatMap(flattenDiffOp);
+
+    while (i < currFlat.length || j < propFlat.length) {
+        let a = currFlat[i];
+        let b = propFlat[j];
+        if (!a && !b) throw 'alignDiffs logic error';
+
+        let isEditA = a && (a.type == 'edit' || a.type == 'insert');
+        let isEditB = b && (b.type == 'edit' || b.type == 'insert');
+
+        if (!b) {
+            if (isEditA)
+                result.push({ original: original[a.originalLine], current: a });
+            i++;
+        } else if (!a) {
+            if (isEditB)
+                result.push({ original: original[b.originalLine], proposed: b });
+            j++;
+        }
+        else {
+            let aOrig = original[a.originalLine];
+            let bOrig = original[b.originalLine];
+            if (a.originalLine === b.originalLine) {
+                result.push({ original: aOrig, current: a, proposed: b });
+                i++; j++;
+            }
+            else if (a.originalLine < b.originalLine) {
+                result.push({ original: aOrig, current: a });
+                i++;
+            }
+            else {
+                result.push({ original: bOrig, proposed: b });
+                j++;
+            }
+        }
+    }
+
+    return result;
 }
