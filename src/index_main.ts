@@ -3,7 +3,7 @@ import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
 import { Note } from "./note";
 import { Speech } from "./speech";
-import { util } from "./util";
+import { simpleCollapsableSection, util } from "./util";
 import { eView, View, ViewData } from "./view";
 
 
@@ -147,6 +147,9 @@ function mkConflictResolver(flow: Flow, note: Note) {
 
     let container = flow.elem(parent, "div", { className: "conflicts" });
     flow.bindArray(() => note.conflicts, mkConflictBox, container);
+
+    let [,,body] = simpleCollapsableSection(flow, "Pre-Conflict Text", parent);
+    flow.bind(() => body.innerText = note.preConflictText);
 }
 
 function mkConflictBox(flow: Flow, text: string) {

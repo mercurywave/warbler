@@ -356,6 +356,13 @@ body {
     margin: 0 10px;
 }
 
+.confBox .collapseHead {
+    font-size: small;
+}
+.confBox .collapseBody {
+    font-size: small;
+}
+
 
 .bubbleFooter {
     display: flex;
@@ -641,4 +648,5 @@ a:visited {
     border: none;
     color: #fff;
     width: 25px;
+    height: 20px;
 }
