@@ -13,6 +13,7 @@ export class Folder {
     public FlagDirty(): void{
         this._needsDbSave = true;
         this._needsServerSave = true;
+        this._data.lastEdit = new Date().toUTCString();
         DB.SaveFolder(this);
     }
 
@@ -33,5 +34,5 @@ export interface FolderData {
     title: string;
     deleted?: boolean;
     creationUtc: string;
-    editsUtc: string[];
+    lastEdit?: string;
 }

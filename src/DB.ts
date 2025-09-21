@@ -111,7 +111,6 @@ export namespace DB {
             title: "",
             v: 1,
             creationUtc: now,
-            editsUtc: [],
         };
         let folder = new Folder(inner);
         _folders.push(folder);
@@ -147,10 +146,23 @@ export namespace DB {
                         let [resNote, conflicts] = response;
                         let note = DB.GetNoteById(resNote.id);
                         if (note) {
+                            let preData = note.text;
+                            let preHistory = note._meta.lastSyncText;
                             note._meta.data = resNote;
                             note._meta.needsFileSave = false;
                             note._meta.lastSyncText = note.text;
                             note._meta.conflicts = conflicts.length > 0 ? conflicts : undefined;
+                            if(preData !== note.text) {
+                                note._meta.preConflictText = preData;
+                                if(conflicts.length == 0) {
+                                    console.warn(`
+                                        Server didn't report a conflict, but the text was modified.
+                                        Possible bug in conflict handling, though might be a timing
+                                        issue or something like whitespace or capitalization.
+                                    `.trim())
+                                    console.log(preData, preHistory);
+                                }
+                            }
                             await saveHelper(NOTES, note._meta);
                         }
                     }
@@ -301,6 +313,7 @@ export namespace DB {
     export function AllParents(): Note[] { return AllNotes().filter(n => !n.isChild); }
     export function Unsorted(): Note[] { return AllParents().filter(n => !n.folder); }
     export function DeletedNotes(): Note[] { return _notes.filter(n => n.isDeleted); }
+    export function ConflictedNotes(): Note[] { return _notes.filter(n => n.isConflicted); }
 
     export function AllFolders(): Folder[] { return _folders; }
 

@@ -18,6 +18,19 @@ export function mkNavigation(flow: Flow) {
         Route.LaunchHome();
     });
 
+    let btConflicted = flow.child<HTMLButtonElement>("button", {
+        type: "button",
+        className: "btNavigate btConflicts",
+    });
+    flow.bind(() => {
+        let cnt = DB.ConflictedNotes().length;
+        btConflicted.innerText = 'Conflicted' + (cnt > 0 ? ` (${cnt})` : '');
+    });
+    btConflicted.addEventListener("click", () => {
+        Route.Launch("conflicted");
+    });
+    flow.conditionalStyle(btConflicted, "noDisp", () => DB.ConflictedNotes().length == 0);
+
     let btUnsorted = flow.child<HTMLButtonElement>("button", {
         type: "button",
         className: "btNavigate",

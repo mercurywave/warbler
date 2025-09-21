@@ -356,6 +356,13 @@ body {
     margin: 0 10px;
 }
 
+.confBox .collapseHead {
+    font-size: small;
+}
+.confBox .collapseBody {
+    font-size: small;
+}
+
 
 .bubbleFooter {
     display: flex;
@@ -463,11 +470,15 @@ body {
     display: block;
     width: 95%;
     text-align: left;
+    border-radius: 6px;
+}
+
+.btNavigate.btConflicts{
+    background-color: #b97714;
 }
 
 .btNavigate:hover {
     outline: 1px solid #3C4A56;
-    border-radius: 6px;
 }
 
 #folders {
@@ -641,4 +652,5 @@ a:visited {
     border: none;
     color: #fff;
     width: 25px;
+    height: 20px;
 }

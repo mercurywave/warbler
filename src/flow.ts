@@ -402,7 +402,7 @@ export class Route {
 
     public static Launch(page: string, path?: { [key: string]: string }) {
         let route = __allRoutes[page];
-        if (!route) throw `page does not exist ${page}`;
+        if (!route) throw `page does not exist '${page}'`;
         Route._launch(page, path);
     }
     static _launch(page?: string, path?: { [key: string]: string }) {

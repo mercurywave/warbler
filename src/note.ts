@@ -87,10 +87,12 @@ export class Note {
     public get conflicts(): string[] { return this._meta.conflicts ?? []; }
     public get isConflicted(): boolean { return (this._meta.conflicts?.length ?? 0) > 0; }
     public clearConflicts() {
-        this._meta.conflicts = undefined;
+        delete this._meta.conflicts;
+        delete this._meta.preConflictText;
         Flow.Dirty();
         DB.SaveNoteLocally(this);
     }
+    public get preConflictText(): string { return this._meta.preConflictText ?? ''; }
 }
 
 export class PendingTranscription {
@@ -134,6 +136,7 @@ export interface NoteMeta {
     needsFileSave: boolean;
     lastSyncText: string;
     conflicts?: string[];
+    preConflictText?: string;
 }
 
 //what is saved to files

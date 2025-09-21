@@ -3,7 +3,7 @@ import { AILinkage } from "./ai_link";
 import { DB } from "./DB";
 import { Flow, Route } from "./flow";
 import { Config, IAIFunction, ILlmServer, IService } from "./settings";
-import { Nil, util } from "./util";
+import { Nil, simpleCollapsableSection, util } from "./util";
 import { eSettingsPage, View } from "./view";
 
 
@@ -353,23 +353,4 @@ function boundSpan(flow: Flow, getter: () => (string | Nil), parent?: HTMLElemen
     flow.bind(() => container.innerHTML = getter() ?? "");
     flow.conditionalStyle(container, "noDisp", () => getter() == "");
     return container;
-}
-
-// starts collapsed and manages collapse state itself
-function simpleCollapsableSection(flow: Flow, title: string, parent?: HTMLElement)
-    : [container: HTMLElement, header: HTMLElement, body: HTMLElement] {
-
-    let container = flow.elem(parent, "div", { className: "collapser" });
-    let header = flow.elem(container, "div", { className: "collapseHead" });
-    let label = flow.elem(header, "span", { innerText: title });
-    let btToggle = flow.elem(header, "button", {
-        innerText: "▶",
-        className: "btCollapse",
-    });
-    let body = flow.elem(container, "div", { className: "collapseBody noDisp" });
-    header.addEventListener('click', () => {
-        let hidden = body.classList.toggle('noDisp');
-        btToggle.innerText = hidden ? '▶' : '▼';
-    });
-    return [container, header, body];
 }
