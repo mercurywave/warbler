@@ -76,8 +76,13 @@ export namespace util {
     }
 
 
-    export function zValidDate(val: string): boolean {
-        return !isNaN(Date.parse(val));
+    export function zValidDate(val?: string): boolean {
+        return !isNaN(Date.parse(val ?? ''));
+    }
+
+    export function parseDate(str?: string) {
+        let num = Date.parse(str as string ?? "");
+        return new Date(isNaN(num) ? 0 : num);
     }
 }
 

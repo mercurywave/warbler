@@ -24,9 +24,7 @@ export namespace NoteApis {
     export async function getRecentNoteEdits(req: Request, res: Response): Promise<void> {
         // return a list of all note IDs updated since the given date
         let { since } = req.query;
-        let num = Date.parse(since as string ?? "");
-        let dt = new Date(isNaN(num) ? 0 : num);
-        let found = await _db.findRecentIds(dt);
+        let found = await _db.findRecentIds(util.parseDate(since as string));
         res.json(found);
     }
 

@@ -9,7 +9,7 @@ const VFolderData = z.object({
     title: z.string(),
     deleted: z.boolean().optional(),
     creationUtc: z.string().refine(util.zValidDate),
-    editsUtc: z.array(z.string().refine(util.zValidDate)),
+    lastEdit: z.string().optional().refine(util.zValidDate),
 });
 type FolderData = z.infer<typeof VFolderData>;
 
@@ -43,6 +43,10 @@ export namespace FolderApis {
 
 function updateFolder(folder: FolderData): [FolderData, string[]] {
     return _db.saveMerge(folder.id, (curr) => {
+        let propDt = util.parseDate(folder.lastEdit);
+        let currDt = util.parseDate(curr?.lastEdit);
+        if (curr && currDt > propDt)
+            return [curr, []];
         return [folder, []];
     });
 }
