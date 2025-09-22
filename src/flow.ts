@@ -199,9 +199,13 @@ export class Flow {
     }
 
     public placeholder(builder: (flow: Flow) => void, parent: HTMLElement, ifRender: () => boolean) {
+        let state = {value:false}; // wrap in closure to maintain
         this.bind(() => {
+            let newState = ifRender();
+            if(state.value === newState) return;
             parent.innerHTML = '';
-            if (!ifRender()) return;
+            state.value = newState;
+            if (!newState) return;
             if (!this._root) throw 'root not set';
             let cFlow = new Flow(this, parent);
             builder(cFlow);
