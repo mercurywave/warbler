@@ -3,8 +3,9 @@ import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
 import { Note } from "./note";
 import { Speech } from "./speech";
-import { simpleCollapsableSection, util } from "@shared/util";
+import { util } from "@shared/util";
 import { eView, View, ViewData } from "./view";
+import { simpleCollapsableSection } from "./common";
 
 
 export function mkMain(flow: Flow, view: ViewData) {

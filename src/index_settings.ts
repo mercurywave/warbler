@@ -3,8 +3,9 @@ import { AILinkage } from "./ai_link";
 import { DB } from "./DB";
 import { Flow, Route } from "./flow";
 import { Config, IAIFunction, ILlmServer, IService } from "./settings";
-import { Nil, simpleCollapsableSection, util } from "@shared/util";
+import { Nil, util } from "@shared/util";
 import { eSettingsPage, View } from "./view";
+import { simpleCollapsableSection } from "./common";
 
 
 type Option = [value: string, display: string];
