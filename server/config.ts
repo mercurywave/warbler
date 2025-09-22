@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as jsonfile from 'jsonfile';
 import { util } from './util';
+import { AI } from './AI';
 
 interface IStaticCache{
     version: number;
@@ -23,10 +24,11 @@ try{
 if(!__cache!.uniqueId) throw `${CACHE_FILE_PATH} has become corrupted, or failed to save`;
 
 export async function apiGetConfig(req: Request, res:Response): Promise<void> {
-    let type = process.env.ASR_TYPE;
+    let asrType = process.env.ASR_TYPE;
     res.status(200).json({
         version: __cache!.version,
         uniqueId: __cache!.uniqueId,
-        ASR: (type != ""),
+        ASR: (asrType != ""),
+        summary: AI.isEnabled && !!AI.summaryModel,
     });
 }
