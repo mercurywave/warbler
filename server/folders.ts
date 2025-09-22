@@ -10,6 +10,7 @@ const VFolderData = z.object({
     deleted: z.boolean().optional(),
     creationUtc: z.string().refine(util.zValidDate),
     lastEdit: z.string().optional().refine(util.zValidDate),
+    summary: z.string().optional(),
 });
 type FolderData = z.infer<typeof VFolderData>;
 

@@ -65,36 +65,38 @@ export class DocStore<T> {
         return null;
     }
 
-    public async findRecentIds(since: Date): Promise<string[]> {
-        let timestamp = since.getTime();
-        let found: Deferred<string | null>[] = [];
-        let job = new Deferred<void>();
-        fs.readdir(this._path, (err, files) => {
-            if (err) throw err;
-            files.forEach(file => {
-                let ext = path.extname(file);
-                let baseName = path.basename(file, ext);
-                if (ext.toUpperCase() === '.JSON' && util.isGUID(baseName)) {
-                    const filePath = path.join(this._path, file);
-                    let future = new Deferred<string | null>();
-                    found.push(future);
-                    fs.stat(filePath, (err, stats) => {
-                        if (err) throw err;
-                        // Check the last modified time
-                        if (stats.mtimeMs > timestamp) {
-                            // TODO: this could validate the file is still in the format we expect
-                            // that requires the caller to pass that in, though
-                            future.resolve(baseName);
-                        }
-                        else future.resolve(null);
-                    });
-                }
-            });
-            job.resolve();
-        });
-        await job;
-        let resolved = await Promise.all(found);
-        return resolved.filter(s => s != null);
+    async getAllFileNames(): Promise<string[]> {
+        let files = await fs.promises.readdir(this._path);
+        return files.map(file => {
+            let ext = path.extname(file);
+            let id = path.basename(file, ext);
+            if (ext.toUpperCase() === '.JSON' && util.isGUID(id))
+                return file;
+            return null;
+        }).filter(s => s != null);
     }
 
+    public async getAllIds(): Promise<string[]> {
+        let files = await this.getAllFileNames();
+        return files.map(file => {
+            let ext = path.extname(file);
+            return path.basename(file, ext);
+        });
+    }
+
+    public async findRecentIds(since: Date): Promise<string[]> {
+        let timestamp = since.getTime();
+        let allIds = await this.getAllFileNames();
+        let futures = allIds.map(async file => {
+            let ext = path.extname(file);
+            let id = path.basename(file, ext);
+            
+            let stats = await fs.promises.stat(path.join(this._path, file));
+            if (stats.mtimeMs > timestamp)
+                return id;
+            return null;
+        });
+        let result = await Promise.all(futures);
+        return result.filter(s => s !== null);
+    }
 }
