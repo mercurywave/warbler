@@ -2,9 +2,8 @@ import { dir } from "console";
 import { Folder, FolderData } from "./folder";
 import { Note, NoteData, NoteMeta } from "./note";
 import { Config } from "./settings";
-import { Deferred, Nil, Rest, util } from "./util";
+import { Deferred, Nil, Rest, util } from "@shared/util";
 import { Flow } from "./flow";
-import ur from "zod/v4/locales/ur.js";
 
 const NOTES = 'notes';
 const FOLDERS = 'folders';

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as jsonfile from 'jsonfile';
-import { util } from './util';
+import { util } from '@shared/util';
 import { AI } from './AI';
 
 interface IStaticCache{

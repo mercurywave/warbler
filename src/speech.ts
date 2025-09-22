@@ -1,7 +1,7 @@
 import { Flow } from "./flow";
 import { Config } from "./settings";
 import { Note, PendingTranscription } from "./note";
-import { Deferred, Nil, util } from "./util";
+import { Deferred, Nil, util } from "@shared/util";
 
 export namespace Speech {
     export function mkRecordWidget(flow: Flow, trans: PendingTranscription) {

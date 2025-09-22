@@ -1,6 +1,6 @@
 import path, { basename } from "path";
 import fs, { stat } from "fs";
-import { Deferred, util } from "./util";
+import { Deferred, util } from "@shared/util";
 
 export class DocStore<T> {
     private _path: string;

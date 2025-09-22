@@ -1,4 +1,4 @@
-import { Nil } from "./util";
+import { Nil } from "@shared/util";
 
 let __tree: Flow;
 let __allFlows: Flow[] = [];

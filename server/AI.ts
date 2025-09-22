@@ -1,4 +1,4 @@
-import { Nil, util } from "./util";
+import { Nil, util, Rest } from "@shared/util";
 
 export class AIServer {
     public type: string;

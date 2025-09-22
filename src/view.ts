@@ -2,7 +2,7 @@ import { DB } from "./DB";
 import { Flow } from "./flow";
 import { Folder } from "./folder";
 import { Note } from "./note";
-import { Nil } from "./util";
+import { Nil } from "@shared/util";
 
 export class ViewData {
     public type: eView;

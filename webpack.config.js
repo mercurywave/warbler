@@ -16,6 +16,9 @@ module.exports = [
             ]
         },
         resolve: {
+            alias: {
+                '@shared': path.resolve(__dirname, './shared')
+            },
             extensions: ['.ts', '.js']
         },
         devtool: "source-map",
@@ -55,6 +58,9 @@ module.exports = [
             ]
         },
         resolve: {
+            alias: {
+                '@shared': path.resolve(__dirname, './shared')
+            },
             extensions: ['.ts', '.js']
         },
         output: {

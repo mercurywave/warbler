@@ -3,7 +3,7 @@ import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
 import { Note } from "./note";
 import { Speech } from "./speech";
-import { simpleCollapsableSection, util } from "./util";
+import { simpleCollapsableSection, util } from "@shared/util";
 import { eView, View, ViewData } from "./view";
 
 

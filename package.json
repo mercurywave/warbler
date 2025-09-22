@@ -2,7 +2,7 @@
   "name": "warbler",
   "version": "0.0.1",
   "description": "Note taking tool",
-  "main": "index.js",
+  "main": "./dist-server/index.js",
   "scripts": {
     "tsc": "tsc",
     "build": "webpack && node static-copy.js",
@@ -12,8 +12,8 @@
     "watch:ts": "npm run build && webpack --watch",
     "watch": "npm run build && npm-run-all --parallel watch:ts watch:web devServe",
     "static": "npm run build && npm-run-all --parallel watch:ts watch:web",
-    "serve": "node dist-server/index.js",
-    "devServe": "nodemon dist-server/index.js"
+    "serve": "node ./dist-server/index.js",
+    "devServe": "nodemon ./dist-server/index.js"
   },
   "repository": {
     "type": "git",

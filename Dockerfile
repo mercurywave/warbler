@@ -15,7 +15,7 @@ COPY --from=build /usr/src/app/package.json ./
 COPY --from=build /usr/src/app/certgen.sh ./
 COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist
-COPY --from=build /usr/src/app/dist-server/index.js ./
+COPY --from=build /usr/src/app/dist-server ./dist-server
 EXPOSE 6464
 RUN mkdir -p /certs && chown node:node /certs
 RUN mkdir -p /usr/src/app/data && chown -R node:node /usr/src/app/data
@@ -23,4 +23,4 @@ USER node
 RUN if [ -z "$ENABLE_HTTPS" ]; then \
         sh "certgen.sh"; \ 
     fi
-CMD ["node", "index.js"]
+CMD ["node", "./dist-server/index.js"]

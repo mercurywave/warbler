@@ -1,5 +1,5 @@
 import { Flow } from "./flow";
-import { Deferred, Nil, Rest } from "./util";
+import { Deferred, Nil, Rest } from "@shared/util";
 
 interface ISettings {
     v: number;

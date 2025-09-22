@@ -2,7 +2,7 @@ import { DB } from "./DB";
 import { Flow } from "./flow";
 import { Folder } from "./folder";
 import { RecordJob } from "./speech";
-import { Nil, util } from "./util";
+import { Nil, util } from "@shared/util";
 
 // in-memory interface
 export class Note {

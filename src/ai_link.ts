@@ -1,5 +1,5 @@
 import { ILlmServer } from "./settings";
-import { util } from "./util";
+import { util } from "@shared/util";
 
 
 export class AILinkage {

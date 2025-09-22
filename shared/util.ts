@@ -1,3 +1,6 @@
+import { Flow } from "../src/flow";
+
+
 export type Nil = null | undefined;
 
 export namespace util {
@@ -66,7 +69,6 @@ export namespace util {
         return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(baseName);
     }
 
-
     export function appendPathToUrl(base: string, segment: string): URL {
         const url = new URL(base);
         if (segment.startsWith('/')) segment = segment.substring(1);
@@ -83,6 +85,70 @@ export namespace util {
     export function parseDate(str?: string) {
         let num = Date.parse(str as string ?? "");
         return new Date(isNaN(num) ? 0 : num);
+    }
+
+}
+
+export namespace Rest {
+    export async function get<T>(baseUrl: string, path: string, params?: { [key: string]: string })
+        : Promise<OResult<T>> {
+        if (!baseUrl) return new OResult(false, 'URL is required');
+        let url = util.appendPathToUrl(baseUrl, path);
+        for (const key in params) {
+            if (params.hasOwnProperty(key)) {
+                url.searchParams.append(key, params[key]);
+            }
+        }
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                signal: AbortSignal.timeout(3000),
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                return new OResult(true, undefined, result as any);
+            } else {
+                console.error('Failed:', response.status, response.statusText);
+                return new OResult(false, `Error: ${response.status} ${response.statusText}`);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            return new OResult(false, `Error: ${error}`);
+        }
+    }
+    export async function post<T>(baseUrl: string, path: string, bodyObj: any): Promise<OResult<T>> {
+        if (!baseUrl) return new OResult(false, 'URL is required');
+        let url = util.appendPathToUrl(baseUrl, path);
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                signal: AbortSignal.timeout(3000),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bodyObj)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                return new OResult(true, undefined, result as any);
+            } else {
+                console.error('Failed:', response.status, response.statusText);
+                return new OResult(false, `Error: ${response.status} ${response.statusText}`);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            return new OResult(false, `Error: ${error}`);
+        }
+    }
+}
+export class OResult<T> {
+    success: boolean;
+    error?: string;
+    response?: T;
+    public constructor(success: boolean, error?: string, response?: T) {
+        this.success = success;
+        this.error = error;
+        this.response = response;
     }
 }
 
@@ -124,4 +190,38 @@ export class Deferred<T> implements Promise<T> {
     public resolve(val?: T) { this._resolveSelf(val as any); }
     public reject(reason?: any) { this._rejectSelf(reason); }
 
+}
+
+
+export class Broadcaster<T> {
+    private _listeners: ((e: T) => void)[] = [];
+
+    public hook(callback: (e: T) => void) {
+        this._listeners.push(callback);
+    }
+
+    public trigger(ev: T) {
+        for (const callback of [...this._listeners]) {
+            callback(ev);
+        }
+    }
+}
+
+// starts collapsed and manages collapse state itself
+export function simpleCollapsableSection(flow: Flow, title: string, parent?: HTMLElement)
+    : [container: HTMLElement, header: HTMLElement, body: HTMLElement] {
+
+    let container = flow.elem(parent, "div", { className: "collapser" });
+    let header = flow.elem(container, "div", { className: "collapseHead" });
+    let label = flow.elem(header, "span", { innerText: title });
+    let btToggle = flow.elem(header, "button", {
+        innerText: "▶",
+        className: "btCollapse",
+    });
+    let body = flow.elem(container, "div", { className: "collapseBody noDisp" });
+    header.addEventListener('click', () => {
+        let hidden = body.classList.toggle('noDisp');
+        btToggle.innerText = hidden ? '▶' : '▼';
+    });
+    return [container, header, body];
 }

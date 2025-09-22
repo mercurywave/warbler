@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import * as z from "zod";
 import { DocStore } from "./docstore";
-import { util } from "./util";
+import { util } from "@shared/util";
 
 const VFolderData = z.object({
     v: z.number(),

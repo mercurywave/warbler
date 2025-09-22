@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import * as z from "zod";
 import { DocStore } from "./docstore";
-import { util } from "./util";
+import { util } from "@shared/util";
 import { autoThreeWayTextMerge } from './diff';
 
 const VNoteData = z.object({
