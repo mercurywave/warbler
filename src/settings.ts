@@ -31,6 +31,7 @@ export interface IBackendSettings {
     version: number;
     uniqueId: string;
     ASR?: boolean;
+    summary?: boolean;
 }
 
 export interface IService {
@@ -91,6 +92,7 @@ export namespace Config {
     }
 
     export function backendHandlesAsr(): boolean { return !!_backendFuncs?.ASR; }
+    export function backendHandlesSummary(): boolean { return !!_backendFuncs?.summary; }
 
 
     export async function LoadSettings(): Promise<void> {
