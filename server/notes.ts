@@ -13,7 +13,6 @@ const VNoteData = z.object({
     childrenIds: z.array(z.guid()),
     deleted: z.boolean().optional(),
     creationUtc: z.string().refine(util.zValidDate),
-    editsUtc: z.array(z.string().refine(util.zValidDate)),
 });
 type NoteData = z.infer<typeof VNoteData>;
 
