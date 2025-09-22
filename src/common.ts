@@ -19,3 +19,29 @@ export function simpleCollapsableSection(flow: Flow, title: string, parent?: HTM
     });
     return [container, header, body];
 }
+
+export function scalableTextarea(
+    flow: Flow,
+    getter: () => string,
+    setter: (val: string) => void,
+    parent?: HTMLElement
+) : [container: HTMLElement, text: HTMLTextAreaElement] {
+
+    let wrapper = flow.elem(parent, "div", { className: "growWrap" });
+    let edit = flow.elem<HTMLTextAreaElement>(wrapper, "textarea");
+    let updateSize = () => wrapper.dataset.replicatedValue = edit.value;
+    edit.addEventListener("input", updateSize);
+    flow.bind(() => {
+        edit.value = getter();
+        updateSize();
+    });
+    edit.addEventListener("change", () => {
+        setter(edit.value);
+        Flow.Dirty();
+    });
+
+    edit.spellcheck = false;
+    edit.addEventListener("focus", () => edit.spellcheck = true);
+    edit.addEventListener("blur", () => edit.spellcheck = false);
+    return [wrapper, edit];
+}

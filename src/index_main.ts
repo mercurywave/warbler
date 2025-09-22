@@ -5,12 +5,16 @@ import { Note } from "./note";
 import { Speech } from "./speech";
 import { util } from "@shared/util";
 import { eView, View, ViewData } from "./view";
-import { simpleCollapsableSection } from "./common";
+import { scalableTextarea, simpleCollapsableSection } from "./common";
 
 
 export function mkMain(flow: Flow, view: ViewData) {
     flow.root("div", { className: "mainInner" });
+
     let header = flow.bindCtl(mkViewHeader);
+    let folderOptions = flow.child("div");
+    flow.placeholder(f => mkFolderHeader(f, view), folderOptions, () => !!view.folder);
+
     let viewContainer = flow.child("div", { className: "viewContainer" });
 
     // this snapshots the route at time of construction, because we manage this via views at parent level
@@ -30,6 +34,15 @@ function mkViewHeader(flow: Flow) {
     flow.bind(() => { prefix.innerText = View.CurrView().title; });
     let edit = flow.child("span");
     flow.conditional(edit, () => !!View.CurrView().folder, mkEditFolderName);
+}
+
+function mkFolderHeader(flow: Flow, view: ViewData) {
+    let folder = view.folder;
+    if (!folder) return;
+    let [container, , body] = simpleCollapsableSection(flow, "Summary");
+    body.classList.add('folderSumary');
+
+    scalableTextarea(flow, () => folder.summary ?? '', (s) => folder.summary = s, body);
 }
 
 function mkEditFolderName(flow: Flow) {
@@ -138,7 +151,7 @@ function mkNoteControl(flow: Flow, note: Note) {
 }
 
 function mkConflictResolver(flow: Flow, note: Note) {
-    let parent = flow.child("div", {className: 'confBox'});
+    let parent = flow.child("div", { className: 'confBox' });
     let lbl = flow.elem(parent, "span", {
         className: "lblWarning",
         innerText: `There was a problem syncing this note. These changes failed to apply:`
@@ -153,7 +166,7 @@ function mkConflictResolver(flow: Flow, note: Note) {
     let container = flow.elem(parent, "div", { className: "conflicts" });
     flow.bindArray(() => note.conflicts, mkConflictBox, container);
 
-    let [,,body] = simpleCollapsableSection(flow, "Pre-Conflict Text", parent);
+    let [, , body] = simpleCollapsableSection(flow, "Pre-Conflict Text", parent);
     flow.bind(() => body.innerText = note.preConflictText);
 }
 

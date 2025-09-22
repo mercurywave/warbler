@@ -202,6 +202,18 @@ body {
     border: 1px solid #fff;
 }
 
+.folderSumary {
+    background: none;
+    outline: 1px solid white;
+    border-radius: 4px;
+    margin-left: 5px;
+    margin-right: -5px;
+}
+.folderSumary textarea {
+    background: none;
+    color: #fff;
+}
+
 
 .bubble {
     animation: fadeInScale 200ms ease-out;

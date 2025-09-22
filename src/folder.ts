@@ -1,3 +1,4 @@
+import { Nil } from "@shared/util";
 import { DB } from "./DB";
 
 
@@ -10,7 +11,7 @@ export class Folder {
         this._data = meta;
     }
 
-    public FlagDirty(): void{
+    public FlagDirty(): void {
         this._needsDbSave = true;
         this._needsServerSave = true;
         this._data.lastEdit = new Date().toUTCString();
@@ -19,12 +20,19 @@ export class Folder {
 
     public get title() { return this._data.title; }
     public set title(value: string) {
-        if(this._data.title === value) return;
+        if (this._data.title === value) return;
         this._data.title = value;
         this.FlagDirty();
     }
 
-    public get id():string { return this._data.id; }
+    public get id(): string { return this._data.id; }
+
+    public get summary(): string | Nil { return this._data.summary; }
+    public set summary(value: string | Nil) { 
+        if(value) this._data.summary = value;
+        else delete this._data.summary;
+        this.FlagDirty();
+    }
 }
 
 //what is saved to settings file and db
@@ -35,4 +43,5 @@ export interface FolderData {
     deleted?: boolean;
     creationUtc: string;
     lastEdit?: string;
+    summary?: string;
 }
