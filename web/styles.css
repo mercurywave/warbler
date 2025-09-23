@@ -213,6 +213,9 @@ body {
     background: none;
     color: #fff;
 }
+.folderSumaryHead.collapseHead{
+    margin: 0 10px 10px 10px;
+}
 
 
 .bubble {

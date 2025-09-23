@@ -39,7 +39,8 @@ function mkViewHeader(flow: Flow) {
 function mkFolderHeader(flow: Flow, view: ViewData) {
     let folder = view.folder;
     if (!folder) return;
-    let [container, , body] = simpleCollapsableSection(flow, "Summary");
+    let [container, header, body] = simpleCollapsableSection(flow, "Summary");
+    header.classList.add('folderSumaryHead');
     body.classList.add('folderSumary');
 
     scalableTextarea(flow, () => folder.summary ?? '', (s) => folder.summary = s, body);
