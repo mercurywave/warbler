@@ -47,18 +47,21 @@ export class AIServer {
         }
     }
 
-    public async generate(model: string, prompt: string): Promise<string> {
-        let result = await Rest.postLong(this.url, "api/generate", {
+    public async generate(model: string, prompt: string, halt: string): Promise<string> {
+        type IGenerateResp = {
+            response: string;
+        };
+        let result = await Rest.postLong<IGenerateResp>(this.url, "api/generate", {
             model, prompt,
             stream: false,
             raw: true,
             options: {
                 temperature: 0.25,
-                stop: ['\n'],
+                stop: [halt, "<<DONE>>"],
             }
         });
         if (result.success)
-            return result.response as string;
+            return result.response?.response ?? '';
         else {
             console.error(result.error);
             throw 'Failed to generate';
@@ -72,12 +75,66 @@ export let AI = new AIServer(process.env.LLM_TYPE ?? '', process.env.LLM_URL ?? 
 export function pc(input?: string): string {
     return (input ?? '')
         .trim()
-        .replace(/\t| {4}/g, '') // Remove tabs and four-space blocks
-        .replace(/\n(?!\n)/g, ' ') // Remove single newlines not followed by another newline
-        .replace(/\n{2,}/g, '\n'); // Collapse multiple newlines into one
+        .split('\n')
+            .map(s => s.trim()) // trim each line
+            .map(s => s === '' ? '\n' : s) //make sure double lines are line breaks
+        .join(''); // join back up without a splitter
 }
 
 export namespace AiApis {
+    export async function postExtractFolderVocab(req: Request, res: Response): Promise<void> {
+        const VId = z.object({
+            id: z.guid(),
+        });
+        let model = AI.summaryModel;
+        if (!model || !AI.isEnabled) {
+            res.status(501).json({ error: 'Summary model not configured' });
+            return;
+        }
+        let parse = VId.safeParse(req.body);
+        if (parse.success) {
+            let id = parse.data.id;
+            let folder = Folders.getById(id);
+            if (!folder) {
+                res.status(400).send('folder does not exist on database');
+                return;
+            }
+            const divider = '\n\n';
+
+            let notes = await Notes.getAllInFolder(id);
+            let noteChunks = chunkArrayByCharacterLength(notes.map(n => n.text));
+            let summaries: string[] = [];
+            for (const chunk of noteChunks) {
+
+                let prompt = pc(`
+                    Extract all jargon and shorthand from the following loose notes from the user
+                    and provide a simple (<6 word!) reference description for each term or proper noun.
+                    Output a bulleted list in the form "- Term: Description".
+
+                    If the term is not extremely clear from the surrounding context,
+                    leave a placeholder '???' as the description.
+
+                    When complete, output <<DONE>>
+
+                    <<NOTES>>
+
+                    ${chunk.join(divider)}
+
+                    <<SUMMARY>>
+                `);
+                let result = await AI.generate(model, prompt, '\n\n');
+                result = util.replaceAll(result, '.-', '\n-'); // seems like a common issue generating lists
+                summaries.push(result);
+            }
+            //TODO: collapse and cleanup duplicates
+
+            res.json(summaries.join('\n'));
+        } else {
+            console.error(z.treeifyError(parse.error));
+            res.status(400).json({ error: parse.error });
+        }
+    }
+
     export async function postSummarizeFolder(req: Request, res: Response): Promise<void> {
         // NOTE: this is not functional, I'm just leaving it half-implemented
         // I can see the path to implementing this, *but I'm not sure it's useful*
@@ -117,7 +174,7 @@ export namespace AiApis {
 
                     <<SUMMARY>>
                 `);
-                let result = await AI.generate(model, prompt);
+                let result = await AI.generate(model, prompt, '\n');
                 console.log(result);
                 summaries.push(result);
             }
@@ -134,7 +191,7 @@ export namespace AiApis {
             //     return await AI.generate(model, prompt);
             // });
             // let summaries = (await Promise.all(futures)).filter(s => s.length > 10);
-            
+
             // let chunks = chunkArrayByCharacterLength(summaries);
 
             // 
