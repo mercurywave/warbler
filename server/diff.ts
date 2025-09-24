@@ -98,13 +98,14 @@ function autoThreeWayMerge(depth: eSplitDepth, original: string[], current: stri
         let b = line.current;
         let c = line.proposed;
         let bc = b ?? c;
-        //autoMergeLine(depth, merged, discarded, a, b, c);
 
         let [t1, d1] = getDiffChange(b);
         let [t2, d2] = getDiffChange(c);
 
-        if (!(d1 || d2)) {
-            if (t1) merged.push(t1);
+        //console.log(t1, d1, t2, d2);
+
+        if (!d1 && !d2 && t1 === t2) {
+            if (t1 !== undefined) merged.push(t1);
         } else if (t1 !== undefined && t2 !== undefined) {
             if (d1 && d2) {
                 const sim = similarity(t1, t2);
@@ -129,7 +130,7 @@ function autoThreeWayMerge(depth: eSplitDepth, original: string[], current: stri
                 discarded.push(t2);
             }
         } else if (t1 !== undefined) {
-            if (!proposed.includes(t1) && d2)
+            if (!proposed.includes(t1) && d1)
                 merged.push(t1);
         }
     }
@@ -291,35 +292,36 @@ function alignDiffs(original: string[], current: DiffOp[], proposed: DiffOp[]): 
         let b = propFlat[j];
         if (!a && !b) throw 'alignDiffs logic error';
 
-        let isEditA = a && (a.type == 'edit' || a.type == 'insert');
-        let isEditB = b && (b.type == 'edit' || b.type == 'insert');
-
         if (!b) {
-            if (isEditA)
-                result.push({ original: original[a.originalLine], current: a });
+            result.push({ original: original[a.originalLine], current: a });
             i++;
         } else if (!a) {
-            if (isEditB)
-                result.push({ original: original[b.originalLine], proposed: b });
+            result.push({ original: original[b.originalLine], proposed: b });
             j++;
         }
         else {
             let aOrig = original[a.originalLine];
             let bOrig = original[b.originalLine];
             if (a.originalLine === b.originalLine) {
-                result.push({ original: aOrig, current: a, proposed: b });
-                i++; j++;
-            }
-            else if (a.originalLine < b.originalLine) {
+                if (a.type === 'insert' && b.type !== 'insert') {
+                    result.push({ original: aOrig, current: a });
+                    i++;
+                } else if (a.type === 'insert' && b.type !== 'insert') {
+                    result.push({ original: bOrig, proposed: b });
+                    j++;
+                } else {
+                    result.push({ original: aOrig, current: a, proposed: b });
+                    i++; j++;
+                }
+            } else if (a.originalLine < b.originalLine) {
                 result.push({ original: aOrig, current: a });
                 i++;
-            }
-            else {
+            } else {
                 result.push({ original: bOrig, proposed: b });
                 j++;
             }
         }
     }
-
+    
     return result;
 }

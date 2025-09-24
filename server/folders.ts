@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import * as z from "zod";
 import { DocStore } from "./docstore";
-import { util } from "@shared/util";
+import { Nil, util } from "@shared/util";
 
 const VFolderData = z.object({
     v: z.number(),
@@ -40,6 +40,11 @@ export namespace FolderApis {
             res.status(400).json({ error: parse.error });
         }
     }
+}
+
+export namespace Folders {
+    export function getDb(): DocStore<FolderData> { return _db; }
+    export function getById(id: string): FolderData | Nil { return _db.load(id); }
 }
 
 function updateFolder(folder: FolderData): [FolderData, string[]] {

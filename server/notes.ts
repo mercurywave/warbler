@@ -59,6 +59,18 @@ export namespace NoteApis {
     }
 }
 
+export namespace Notes {
+    export async function getAllInFolder(id: string): Promise<NoteData[]> {
+        let notes = await _db.search(n => n.folderId === id && !n.deleted);
+        sortChronologically(notes);
+        return notes;
+    }
+
+    export function sortChronologically(notes: NoteData[]) {
+        notes.sort((a, b) => new Date(a.creationUtc).getTime() - new Date(b.creationUtc).getTime());
+    }
+}
+
 function updateNote(note: NoteData, anscestor: string): [NoteData, string[]] {
     return _db.saveMerge(note.id, (curr) => {
         let [text, conflicts] = autoThreeWayTextMerge(anscestor, curr?.text ?? '', note.text);

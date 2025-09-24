@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+dotenv.config(); // set this up before pulling in files that depend on it
 import express from "express";
 import cors from "cors";
 import path from "path";
@@ -10,11 +11,12 @@ import FormData from "form-data";
 import { apiGetConfig } from "./config";
 import { NoteApis } from "./notes";
 import { FolderApis } from "./folders";
+import { AiApis, AIServer } from "./AI";
 
-dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 6464;
 const upload = multer();
+
 
 if (!process.env.ENABLE_CORS) app.use(cors());
 
@@ -40,6 +42,9 @@ app.post('/v1/updateNotes', NoteApis.postUpdateNotes);
 
 app.get('/v1/getFolders', FolderApis.getFolders);
 app.post('/v1/updateFolders', FolderApis.postUpdateFolders);
+
+
+app.post('/v1/summarizeFolder', AiApis.postSummarizeFolder);
 
 
 app.post('/v1/asr', upload.single('audio_file'), async (req, res) => {
