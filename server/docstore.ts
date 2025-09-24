@@ -70,7 +70,7 @@ export class DocStore<T> {
         return files.map(file => {
             let ext = path.extname(file);
             let id = path.basename(file, ext);
-            if (ext.toUpperCase() === '.JSON' && util.isGUID(id))
+            if (ext === '.json' && util.isGUID(id))
                 return file;
             return null;
         }).filter(s => s != null);
@@ -86,14 +86,33 @@ export class DocStore<T> {
 
     public async findRecentIds(since: Date): Promise<string[]> {
         let timestamp = since.getTime();
-        let allIds = await this.getAllFileNames();
-        let futures = allIds.map(async file => {
+        let allFiles = await this.getAllFileNames();
+        let futures = allFiles.map(async file => {
             let ext = path.extname(file);
             let id = path.basename(file, ext);
-            
+
             let stats = await fs.promises.stat(path.join(this._path, file));
             if (stats.mtimeMs > timestamp)
                 return id;
+            return null;
+        });
+        let result = await Promise.all(futures);
+        return result.filter(s => s !== null);
+    }
+
+    public async search(include: (obj: T) => boolean): Promise<T[]> {
+        // brute-force search
+        let allFiles = await this.getAllFileNames();
+        let futures = allFiles.map(async file => {
+            let ext = path.extname(file);
+            let id = path.basename(file, ext);
+
+            try {
+                let contents = await fs.promises.readFile(path.join(this._path, file));
+                let obj = JSON.parse(contents as any) as T;
+                if (include(obj))
+                    return obj;
+            } catch { }
             return null;
         });
         let result = await Promise.all(futures);

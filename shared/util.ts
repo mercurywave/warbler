@@ -115,13 +115,19 @@ export namespace Rest {
             return new OResult(false, `Error: ${error}`);
         }
     }
-    export async function post<T>(baseUrl: string, path: string, bodyObj: any): Promise<OResult<T>> {
+    export function post<T>(baseUrl: string, path: string, bodyObj: any): Promise<OResult<T>> {
+        return _post(baseUrl, path, bodyObj, 3000);
+    }
+    export function postLong<T>(baseUrl: string, path: string, bodyObj: any): Promise<OResult<T>> {
+        return _post(baseUrl, path, bodyObj);
+    }
+    export async function _post<T>(baseUrl: string, path: string, bodyObj: any, timeoutMs?: number): Promise<OResult<T>> {
         if (!baseUrl) return new OResult(false, 'URL is required');
         let url = util.appendPathToUrl(baseUrl, path);
         try {
             const response = await fetch(url, {
                 method: 'POST',
-                signal: AbortSignal.timeout(3000),
+                signal: timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bodyObj)
             });
