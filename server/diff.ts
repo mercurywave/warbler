@@ -105,7 +105,7 @@ function autoThreeWayMerge(depth: eSplitDepth, original: string[], current: stri
         //console.log(t1, d1, t2, d2);
 
         if (!d1 && !d2 && t1 === t2) {
-            if (t1) merged.push(t1);
+            if (t1 !== undefined) merged.push(t1);
         } else if (t1 !== undefined && t2 !== undefined) {
             if (d1 && d2) {
                 const sim = similarity(t1, t2);
