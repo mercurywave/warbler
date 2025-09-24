@@ -3,9 +3,10 @@ import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
 import { Note } from "./note";
 import { Speech } from "./speech";
-import { util } from "@shared/util";
+import { Rest, util } from "@shared/util";
 import { eView, View, ViewData } from "./view";
 import { scalableTextarea, simpleCollapsableSection } from "./common";
+import { Config } from "./settings";
 
 
 export function mkMain(flow: Flow, view: ViewData) {
@@ -43,10 +44,26 @@ function mkFolderHeader(flow: Flow, view: ViewData) {
     header.classList.add('folderSumaryHead');
     body.classList.add('folderSumary');
 
-    flow.elem(body, "h3", {innerText: 'Summary'});
+    let summaryHead = flow.elem(body, "div", {className: "lblSumHead"});
+    flow.elem(summaryHead, "span", {innerText: 'Summary'});
     scalableTextarea(flow, () => folder.summary ?? '', (s) => folder.summary = s, body);
     
-    flow.elem(body, "h3", {innerText: 'Transcription Vocabulary'});
+    let vocabHead = flow.elem(body, "div", {className: "lblSumHead"});
+    flow.elem(vocabHead, "span", {innerText: 'Transcription Vocabulary'});
+    let btGenVocab = flow.elem<HTMLButtonElement>(vocabHead, "button", {
+        type: "button",
+        innerText: "Auto-Extract",
+        className: "btExtract",
+    });
+    flow.conditionalStyle(btGenVocab, "noDisp", () => !Config.backendHandlesSummary());
+    btGenVocab.addEventListener("click", async () => {
+        let response = await Rest.postLong(Config.getBackendUrl()!, "v1/folderVocab", {
+            id: folder.id,
+        });
+        if(response.success){
+            folder.vocab = response.response as string ?? '';
+        }
+    });
     scalableTextarea(flow, () => folder.vocab ?? '', (s) => folder.vocab = s, body);
 }
 
