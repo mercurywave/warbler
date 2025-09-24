@@ -15,6 +15,10 @@ export namespace util {
         return text + delim + append;
     }
 
+    export function replaceAll(text: string, search: string, replace: string): string{
+        return text.replace(new RegExp(search, 'g'), replace);
+    }
+
     export function deepCopy(obj: any): any {
         return JSON.parse(JSON.stringify(obj));
     }
@@ -116,10 +120,10 @@ export namespace Rest {
         }
     }
     export function post<T>(baseUrl: string, path: string, bodyObj: any): Promise<OResult<T>> {
-        return _post(baseUrl, path, bodyObj, 3000);
+        return _post<T>(baseUrl, path, bodyObj, 3000);
     }
     export function postLong<T>(baseUrl: string, path: string, bodyObj: any): Promise<OResult<T>> {
-        return _post(baseUrl, path, bodyObj);
+        return _post<T>(baseUrl, path, bodyObj);
     }
     export async function _post<T>(baseUrl: string, path: string, bodyObj: any, timeoutMs?: number): Promise<OResult<T>> {
         if (!baseUrl) return new OResult(false, 'URL is required');

@@ -45,6 +45,7 @@ app.post('/v1/updateFolders', FolderApis.postUpdateFolders);
 
 
 app.post('/v1/summarizeFolder', AiApis.postSummarizeFolder);
+app.post('/v1/folderVocab', AiApis.postExtractFolderVocab);
 
 
 app.post('/v1/asr', upload.single('audio_file'), async (req, res) => {
