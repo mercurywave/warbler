@@ -33,6 +33,13 @@ export class Folder {
         else delete this._data.summary;
         this.FlagDirty();
     }
+
+    public get vocab(): string | Nil { return this._data.vocab; }
+    public set vocab(value: string | Nil) { 
+        if(value) this._data.vocab = value;
+        else delete this._data.vocab;
+        this.FlagDirty();
+    }
 }
 
 //what is saved to settings file and db
@@ -44,4 +51,5 @@ export interface FolderData {
     creationUtc: string;
     lastEdit?: string;
     summary?: string;
+    vocab?: string;
 }

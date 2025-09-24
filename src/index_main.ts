@@ -43,7 +43,11 @@ function mkFolderHeader(flow: Flow, view: ViewData) {
     header.classList.add('folderSumaryHead');
     body.classList.add('folderSumary');
 
+    flow.elem(body, "h3", {innerText: 'Summary'});
     scalableTextarea(flow, () => folder.summary ?? '', (s) => folder.summary = s, body);
+    
+    flow.elem(body, "h3", {innerText: 'Transcription Vocabulary'});
+    scalableTextarea(flow, () => folder.vocab ?? '', (s) => folder.vocab = s, body);
 }
 
 function mkEditFolderName(flow: Flow) {
