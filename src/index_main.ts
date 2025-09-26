@@ -23,7 +23,7 @@ export function mkMain(flow: Flow, view: ViewData) {
 
     let pad = flow.child("div", { className: "scrollPad" });
     flow.bindMail('Route.Launch', null, () => {
-        let elem = view.canAddNotes ? pad : header;
+        let elem = view.focusOnBottom ? pad : header;
         requestAnimationFrame(() => elem.scrollIntoView());
         elem.scrollIntoView();
     });
@@ -44,12 +44,12 @@ function mkFolderHeader(flow: Flow, view: ViewData) {
     header.classList.add('folderSumaryHead');
     body.classList.add('folderSumary');
 
-    let summaryHead = flow.elem(body, "div", {className: "lblSumHead"});
-    flow.elem(summaryHead, "span", {innerText: 'Summary'});
+    let summaryHead = flow.elem(body, "div", { className: "lblSumHead" });
+    flow.elem(summaryHead, "span", { innerText: 'Summary' });
     scalableTextarea(flow, () => folder.summary ?? '', (s) => folder.summary = s, body);
-    
-    let vocabHead = flow.elem(body, "div", {className: "lblSumHead"});
-    flow.elem(vocabHead, "span", {innerText: 'Transcription Vocabulary'});
+
+    let vocabHead = flow.elem(body, "div", { className: "lblSumHead" });
+    flow.elem(vocabHead, "span", { innerText: 'Transcription Vocabulary' });
     let btGenVocab = flow.elem<HTMLButtonElement>(vocabHead, "button", {
         type: "button",
         innerText: "Auto-Extract",
@@ -60,7 +60,7 @@ function mkFolderHeader(flow: Flow, view: ViewData) {
         let response = await Rest.postLong(Config.getBackendUrl()!, "v1/folderVocab", {
             id: folder.id,
         });
-        if(response.success){
+        if (response.success) {
             folder.vocab = response.response as string ?? '';
         }
     });
@@ -96,6 +96,22 @@ async function preLoadNotes(): Promise<void> {
     await DB.ReloadIfChangedExternally();
 }
 
+async function preLoadSearch(path: { [key: string]: string }): Promise<void> {
+    let { input } = path;
+    let notes: Note[] = [];
+    if (Config.backendHandlesEmbed()) {
+        let response = await Rest.post(Config.getBackendUrl()!, "v1/notesSearch", { input });
+        if (response.success) {
+            let ids: string[] = response.response as any;
+            notes = ids.map(i => DB.GetNoteById(i))
+                .filter(n => !!n);
+            if (notes.length != ids.length)
+                console.warn("search returned a note ID that isn't on the client", ids);
+        }
+    }
+    View.Search(notes);
+}
+
 Route.Register("all", (flow) => {
     rendNotesList(flow);
 }, () => View.ShowAll(), preLoadNotes, true);
@@ -129,6 +145,10 @@ Route.Register("note", (flow, pars) => {
     if (!note) Route.ErrorFallback();
     else View.SingleNote(note);
 });
+
+Route.Register("search", (flow, pars) => {
+    rendNotesList(flow);
+}, pars => { }, preLoadSearch)
 
 
 function mkNoteControl(flow: Flow, note: Note) {

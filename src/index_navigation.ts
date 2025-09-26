@@ -68,6 +68,12 @@ function mkSearch(flow: Flow) {
         autocomplete: "off",
         ariaHidden: "true",
     });
+    txtField.addEventListener("keypress", e => {
+        if (e.key == 'Enter') {
+            if (txtField.value.trim() != "")
+                Route.Launch("search", { input: txtField.value.trim() });
+        }
+    });
     let dropDown = flow.child<HTMLSelectElement>("select", {
         id: "search-list",
         size: 8,

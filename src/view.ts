@@ -25,19 +25,27 @@ export class ViewData {
         return this._notes;
     }
 
-    public get canAddNotes(): boolean { 
-        return this.type != eView.Settings && this.type != eView.None && !this.showingDeleted; 
+    public get canAddNotes(): boolean {
+        return this.type != eView.Settings && this.type != eView.None && !this.showingDeleted;
+    }
+
+    public get focusOnBottom(): boolean {
+        return this.canAddNotes && this.type !== eView.Search;
     }
 
     public get more(): number { return this._fullResults.length - this.notes.length; }
+
+    public setOrdered(notes: Note[]) {
+        this._fullResults = notes;
+        this._notes = notes; // TODO: truncate
+    }
 
     // will automatically include children notes along side the main note
     public setChronResults(notes: Note[]) {
         notes.sort((a, b) => a.creationUtc.getTime() - b.creationUtc.getTime());
         notes = notes.map(n => n.getChildNoteCluster()).flat();
         this.isChron = true;
-        this._fullResults = notes;
-        this._notes = notes; // TODO: truncate
+        this.setOrdered(notes);
     }
     public forceAdd(note: Note): boolean {
         if (this.notes.includes(note)) return false; // already added
@@ -64,7 +72,7 @@ export class ViewData {
 }
 
 export enum eView {
-    None, All, Unsorted, Folder, Tag, Settings, Deleted, SingleNote, Conflicted
+    None, All, Unsorted, Folder, Tag, Settings, Deleted, SingleNote, Conflicted, Search
 };
 
 export enum eSettingsPage {
@@ -126,6 +134,14 @@ export namespace View {
         reset(eView.SingleNote);
         _data.setChronResults([note]);
         _data.title = "Note";
+        finalize();
+    }
+
+    export function Search(notes: Note[]) {
+        reset(eView.Search);
+        _data.setOrdered(notes);
+        _data.title = "Search Results";
+        _data.groupByParents = false;
         finalize();
     }
 

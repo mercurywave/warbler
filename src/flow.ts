@@ -391,7 +391,7 @@ type RouteHandler = (flow: Flow, path: { [key: string]: string }) => void;
 type OnNavigateHandler = (path: { [key: string]: string }) => void;
 export class Route {
     public static Register(page: string, handler: RouteHandler, onNavigate?: OnNavigateHandler,
-        onPreLoad?: () => Promise<void>, dflt?: boolean) {
+        onPreLoad?: (path: { [key: string]: string }) => Promise<void>, dflt?: boolean) {
         let route = new Route(page, handler, onNavigate, onPreLoad);
         __allRoutes[page] = route;
         if (dflt) {
@@ -444,7 +444,7 @@ export class Route {
         let [route, path] = Route.getCurrRoute();
         if (route._onPreLoad) {
             try {
-                await route._onPreLoad();
+                await route._onPreLoad(path);
             } catch (e) { console.error(e); }
         }
 
@@ -492,9 +492,10 @@ export class Route {
     private _page: string;
     private _handler: RouteHandler;
     private _onNavigate?: OnNavigateHandler | Nil;
-    private _onPreLoad?: () => Promise<void>;
+    private _onPreLoad?: (path: { [key: string]: string }) => Promise<void>;
 
-    constructor(page: string, handler: RouteHandler, onNavigate?: OnNavigateHandler, onPreLoad?: () => Promise<void>) {
+    constructor(page: string, handler: RouteHandler, onNavigate?: OnNavigateHandler
+        , onPreLoad?: (path: { [key: string]: string }) => Promise<void>) {
         this._page = page;
         this._handler = handler;
         this._onNavigate = onNavigate;
