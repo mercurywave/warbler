@@ -7,6 +7,7 @@ import { Rest, util } from "@shared/util";
 import { eView, View, ViewData } from "./view";
 import { scalableTextarea, simpleCollapsableSection } from "./common";
 import { Config } from "./settings";
+import { Search } from "./search";
 
 
 export function mkMain(flow: Flow, view: ViewData) {
@@ -98,17 +99,7 @@ async function preLoadNotes(): Promise<void> {
 
 async function preLoadSearch(path: { [key: string]: string }): Promise<void> {
     let { input } = path;
-    let notes: Note[] = [];
-    if (Config.backendHandlesEmbed()) {
-        let response = await Rest.post(Config.getBackendUrl()!, "v1/notesSearch", { input });
-        if (response.success) {
-            let ids: string[] = response.response as any;
-            notes = ids.map(i => DB.GetNoteById(i))
-                .filter(n => !!n);
-            if (notes.length != ids.length)
-                console.warn("search returned a note ID that isn't on the client", ids);
-        }
-    }
+    let notes = await Search.SearchNotes(input);
     View.Search(notes);
 }
 
