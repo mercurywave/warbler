@@ -22,6 +22,7 @@ export class AIServer {
     public get isEnabled(): boolean { return !!this.type && !!this.url; }
 
     public get summaryModel(): string | Nil { return process.env.SUMMARY_MODEL; }
+    public get embedModel(): string | Nil { return process.env.EMBED_MODEL; }
 
     public async TestConnection(): Promise<[boolean, string]> {
         let baseUrl = this.url;
@@ -67,6 +68,23 @@ export class AIServer {
             throw 'Failed to generate';
         }
     }
+
+    public async embed(model: string, text: string): Promise<number[]> {
+        type IGenerateResp = {
+            embeddings: number[][];
+        };
+        let result = await Rest.postLong<IGenerateResp>(this.url, "api/embed", {
+            model, input: text
+        });
+        if (result.success) {
+            console.log(`embedding generated: ${text.substring(0, 30)}...`);
+            return result.response?.embeddings[0] ?? [];
+        }
+        else {
+            console.error(result.error);
+            throw 'Failed to generate';
+        }
+    }
 }
 
 export let AI = new AIServer(process.env.LLM_TYPE ?? '', process.env.LLM_URL ?? '');
@@ -76,8 +94,8 @@ export function pc(input?: string): string {
     return (input ?? '')
         .trim()
         .split('\n')
-            .map(s => s.trim()) // trim each line
-            .map(s => s === '' ? '\n' : s) //make sure double lines are line breaks
+        .map(s => s.trim()) // trim each line
+        .map(s => s === '' ? '\n' : s) //make sure double lines are line breaks
         .join(''); // join back up without a splitter
 }
 

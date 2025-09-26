@@ -15,6 +15,9 @@
     "serve": "node ./dist-server/index.js",
     "devServe": "nodemon ./dist-server/index.js"
   },
+  "nodemonConfig": {
+    "ignore": ["data/*"]
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mercurywave/warbler.git"
