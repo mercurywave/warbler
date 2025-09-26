@@ -111,10 +111,10 @@ export class VectorIndex<T> {
         for (const id in this._cache.keys) {
             let cache = this._cache.keys[id];
             let similarity = calculateCosineSimilarity(cache.vector, vector);
-            if (similarity > .4)
+            if (similarity > .5)
                 results.push({ id, similarity });
         }
-        results.sort((a, b) => a.similarity - b.similarity);
+        results.sort((a, b) => b.similarity- a.similarity);
         return results.map(r => r.id);
     }
 }
