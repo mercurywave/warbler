@@ -3,6 +3,7 @@ import * as z from "zod";
 import { DocStore } from "./docstore";
 import { util } from "@shared/util";
 import { autoThreeWayTextMerge } from './diff';
+import { VectorIndex } from './vector';
 
 const VNoteData = z.object({
     v: z.number(),
@@ -14,9 +15,10 @@ const VNoteData = z.object({
     deleted: z.boolean().optional(),
     creationUtc: z.string().refine(util.zValidDate),
 });
-type NoteData = z.infer<typeof VNoteData>;
+export type NoteData = z.infer<typeof VNoteData>;
 
 let _db: DocStore<NoteData> = new DocStore("./data", "notes");
+let _vectorIndex = new VectorIndex<NoteData>(_db, "notes", 1, o => o.text);
 
 export namespace NoteApis {
 
@@ -57,9 +59,25 @@ export namespace NoteApis {
             res.status(400).json({ error: parse.error });
         }
     }
+
+    export async function postSearch(req: Request, res: Response): Promise<void> {
+        const VReq = z.object({
+            input: z.string(),
+        });
+        let parse = VReq.safeParse(req.body);
+        if (parse.success) {
+            let input = parse.data.input;
+            let search = await _vectorIndex.vectorSearch(input);
+            res.json(search);
+        } else {
+            console.error(z.treeifyError(parse.error));
+            res.status(400).json({ error: parse.error });
+        }
+    }
 }
 
 export namespace Notes {
+    export function getDB(): DocStore<NoteData> { return _db; }
     export async function getAllInFolder(id: string): Promise<NoteData[]> {
         let notes = await _db.search(n => n.folderId === id && !n.deleted);
         sortChronologically(notes);

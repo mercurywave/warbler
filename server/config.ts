@@ -30,5 +30,6 @@ export async function apiGetConfig(req: Request, res:Response): Promise<void> {
         uniqueId: __cache!.uniqueId,
         ASR: (asrType != ""),
         summary: AI.isEnabled && !!AI.summaryModel,
+        embed: AI.isEnabled && !!AI.embedModel,
     });
 }

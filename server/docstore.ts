@@ -1,10 +1,11 @@
 import path, { basename } from "path";
 import fs, { stat } from "fs";
-import { Deferred, util } from "@shared/util";
+import { Broadcaster, Deferred, util } from "@shared/util";
 
 export class DocStore<T> {
     private _path: string;
     private _subFolder: string;
+    private _evUpdater: Broadcaster<[string, T]> = new Broadcaster();
     public constructor(folder: string, subFolder: string) {
         this._path = path.join(folder, subFolder);
         this._subFolder = subFolder;
@@ -16,6 +17,10 @@ export class DocStore<T> {
 
     private _getFile(id: string) {
         return path.join(this._path, `${id}.json`);
+    }
+
+    public registerIndex(handler: (id: string, obj: T) => void) {
+        this._evUpdater.hook(e => handler(e[0], e[1]));
     }
 
     public saveMerge<U>(id: string, handler: (curr?: T) => [toWrite: T, diff: U]): [T, U] {
@@ -36,6 +41,7 @@ export class DocStore<T> {
         try {
             let [output, diff] = handler(curr);
             fs.writeFileSync(file, JSON.stringify(output));
+            setTimeout(() => this._evUpdater.trigger([id, output]));
             return [output, diff];
         } catch (e) {
             console.log(id);
