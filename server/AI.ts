@@ -77,7 +77,7 @@ export class AIServer {
             model, input: text
         });
         if (result.success) {
-            console.log("embedding generated");
+            console.log(`embedding generated: ${text.substring(0, 30)}...`);
             return result.response?.embeddings[0] ?? [];
         }
         else {

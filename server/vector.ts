@@ -45,7 +45,7 @@ export class VectorIndex<T> {
     private _clearCache(model?: string, version?: number) {
         model ??= '';
         version ??= 0;
-        this._cache = { version: version, model: '', keys: {} };
+        this._cache = { version, model: model, keys: {} };
     }
 
     private async _bootCache(version: number) {
@@ -89,7 +89,7 @@ export class VectorIndex<T> {
         if ((this._lastHash[id] ?? '') !== hash) return;
         this._cache.keys[id] = {
             checksum: hash,
-            vector: response,
+            vector: normalize(response),
         }
         await this._flushCache();
     }
@@ -102,6 +102,7 @@ export class VectorIndex<T> {
     public async vectorSearch(input: string): Promise<string[]> {
         if (!AI.embedModel) throw 'No embedding model configured';
         let vector = await AI.embed(AI.embedModel, input);
+        vector = normalize(vector);
         type IResult = {
             id: string,
             similarity: number,
@@ -110,12 +111,20 @@ export class VectorIndex<T> {
         for (const id in this._cache.keys) {
             let cache = this._cache.keys[id];
             let similarity = calculateCosineSimilarity(cache.vector, vector);
-            if (similarity > .5)
+            if (similarity > .4)
                 results.push({ id, similarity });
         }
         results.sort((a, b) => a.similarity - b.similarity);
         return results.map(r => r.id);
     }
+}
+
+function normalize(vector: number[]): number[] {
+    const norm = Math.sqrt(vector.reduce((sum, value) => sum + Math.pow(value, 2), 0));
+
+    if (norm === 0) return vector; // this seems basically impossible, but...
+
+    return vector.map(value => value / norm);
 }
 
 function calculateCosineSimilarity(vector1: number[], vector2: number[]): number {
