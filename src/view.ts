@@ -15,6 +15,7 @@ export class ViewData {
     public isChron: boolean = false; // chronologically ordered
     public showingDeleted: boolean = false;
     public groupByParents: boolean = true;
+    public searchTerm: string = '';
 
     public constructor(type: eView) {
         this.type = type;
@@ -137,11 +138,12 @@ export namespace View {
         finalize();
     }
 
-    export function Search(notes: Note[]) {
+    export function Search(notes: Note[], term: string) {
         reset(eView.Search);
         _data.setOrdered(notes);
         _data.title = "Search Results";
         _data.groupByParents = false;
+        _data.searchTerm = term;
         finalize();
     }
 

@@ -100,7 +100,7 @@ async function preLoadNotes(): Promise<void> {
 async function preLoadSearch(path: { [key: string]: string }): Promise<void> {
     let { input } = path;
     let notes = await Search.SearchNotes(input);
-    View.Search(notes);
+    View.Search(notes, input);
 }
 
 Route.Register("all", (flow) => {

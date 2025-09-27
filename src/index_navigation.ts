@@ -2,7 +2,7 @@ import { DB } from "./DB";
 import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
 import { mkSettingsLauncher } from "./index_settings";
-import { eSettingsPage, View } from "./view";
+import { View } from "./view";
 
 
 
@@ -67,6 +67,11 @@ function mkSearch(flow: Flow) {
         placeholder: "Search ...", // the space currently tricks edge into NOT disrespecting autocomplete
         autocomplete: "off",
         ariaHidden: "true",
+    });
+    flow.bindMail('Route.Launch', null, () => {
+        let view = View.CurrView();
+        if(view.searchTerm !== '')
+            txtField.value = view.searchTerm;
     });
     txtField.addEventListener("keypress", e => {
         if (e.key == 'Enter') {
