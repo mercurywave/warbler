@@ -199,10 +199,10 @@ export class Flow {
     }
 
     public placeholder(builder: (flow: Flow) => void, parent: HTMLElement, ifRender: () => boolean) {
-        let state = {value:false}; // wrap in closure to maintain
+        let state = { value: false }; // wrap in closure to maintain
         this.bind(() => {
             let newState = ifRender();
-            if(state.value === newState) return;
+            if (state.value === newState) return;
             parent.innerHTML = '';
             state.value = newState;
             if (!newState) return;
@@ -423,7 +423,10 @@ export class Route {
 
     public static async Init(): Promise<void> {
         // initial page load counts as a launch for rendering
-        await Route._asyncLaunch(() => Flow.SendSpam('Route.Launch'));
+        await Route._asyncLaunch(() => {
+            Flow.SendSpam('Route.Launch');
+            Flow.SendSpam('Route.Init');
+        });
     }
 
     public static OnNavigate() {

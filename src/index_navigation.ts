@@ -68,11 +68,13 @@ function mkSearch(flow: Flow) {
         autocomplete: "off",
         ariaHidden: "true",
     });
-    flow.bindMail('Route.Launch', null, () => {
+    let pullSearch = () => {
         let view = View.CurrView();
         if(view.searchTerm !== '')
             txtField.value = view.searchTerm;
-    });
+    };
+    flow.bindMail('Route.Init', null, pullSearch);
+    flow.bindMail('Route.Navigate', null, pullSearch);
     txtField.addEventListener("keypress", e => {
         if (e.key == 'Enter') {
             if (txtField.value.trim() != "")
