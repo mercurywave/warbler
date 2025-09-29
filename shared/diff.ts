@@ -87,8 +87,8 @@ function rejoiner(original: string, splitter: RegExp, pieces: string[]): string 
 }
 
 function autoThreeWayMerge(depth: eSplitDepth, original: string[], current: string[], proposed: string[]): [merged: string[], discarded: string[]] {
-    const curOps = diff(original, current);
-    const propOps = diff(original, proposed);
+    const curOps = diff(original, current, true);
+    const propOps = diff(original, proposed, true);
     let align = alignDiffs(original, curOps, propOps);
     let merged: string[] = [];
     let discarded: string[] = [];
@@ -196,7 +196,7 @@ function similarity(a: string, b: string): number {
 /**
  * Diff original → variant into a sequence of big ops: equal, insert, delete.
  */
-export function diff(original: string[], variant: string[]): DiffOp[] {
+export function diff(original: string[], variant: string[], mergeEdits?:boolean): DiffOp[] {
     const m = original.length, n = variant.length;
     const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
 
@@ -240,6 +240,8 @@ export function diff(original: string[], variant: string[]): DiffOp[] {
             grouped.push({ type: op.type, lines: [...op.lines] });
         }
     }
+
+    if(!mergeEdits) return grouped;
 
     // merge Insert + delete into a single action
     const editClean: DiffOp[] = [];
