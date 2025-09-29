@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import * as z from "zod";
 import { DocStore } from "./docstore";
 import { util } from "@shared/util";
-import { autoThreeWayTextMerge } from './diff';
+import { autoThreeWayTextMerge } from '../shared/diff';
 import { VectorIndex } from './vector';
 
 const VNoteData = z.object({
