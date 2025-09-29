@@ -3,9 +3,10 @@ import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
 import { Note } from "./note";
 import { Speech } from "./speech";
-import { util } from "@shared/util";
+import { Rest, util } from "@shared/util";
 import { View } from "./view";
 import { simpleCollapsableSection } from "./common";
+import { Config } from "./settings";
 
 export function mkNoteControl(flow: Flow, note: Note) {
     let root = flow.root("div", { className: "bubble" });
@@ -108,6 +109,17 @@ function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
     });
 
     let mnuNote = mkMoreMenu(flow, span);
+    let mCleanupAudio = mkMoreMenuOpt(flow, mnuNote, "Clean Transcript", async () => {
+        let folder = note.folder;
+        let response = await Rest.postLong(Config.getBackendUrl()!, "v1/cleanupTranscript", {
+            raw: note.text,
+            summary: folder?.summary,
+            vocab: folder?.vocab,
+        });
+        if (response.success) {
+            console.log(response.response);
+        }
+    });
     let mUndelete = mkMoreMenuOpt(flow, mnuNote, "Undelete Note", () => {
         note.isDeleted = false;
     });
@@ -125,6 +137,7 @@ function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
         mUndelete.hidden = !note.isDeleted;
         mHardDelete.hidden = !note.isDeleted;
         mDelete.hidden = note.isDeleted;
+        mCleanupAudio.hidden = !Config.getBackendUrl();
     });
 }
 
