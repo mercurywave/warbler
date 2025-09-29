@@ -340,6 +340,17 @@ body {
     color: #fff !important;
 }
 
+.diff .edit{
+    color: #b97714;
+}
+.diff .delete{
+    color: #9a3a2f;
+    text-decoration: line-through;
+}
+.diff .insert{
+    color: #70a450;
+}
+
 
 .pendRec {
     font-size: smaller;

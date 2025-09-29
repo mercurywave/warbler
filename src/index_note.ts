@@ -7,6 +7,7 @@ import { Rest, util } from "@shared/util";
 import { View } from "./view";
 import { simpleCollapsableSection } from "./common";
 import { Config } from "./settings";
+import { diff } from "@shared/diff";
 
 export function mkNoteControl(flow: Flow, note: Note) {
     let root = flow.root("div", { className: "bubble" });
@@ -22,6 +23,7 @@ export function mkNoteControl(flow: Flow, note: Note) {
         edit.value = note.text;
         updateSize();
     });
+    flow.conditionalStyle(wrapper, "noDisp", () => !!note.suggestedChanges);
     edit.addEventListener("change", () => {
         note.text = edit.value;
         Flow.Dirty();
@@ -39,6 +41,8 @@ export function mkNoteControl(flow: Flow, note: Note) {
         root.scrollIntoView();
     });
 
+    mkSuggestion(flow, note);
+
     let recordings = flow.child("div");
     flow.bindArray(() => note._pendingAudio, Speech.mkRecordWidget, recordings);
 
@@ -47,6 +51,33 @@ export function mkNoteControl(flow: Flow, note: Note) {
 
     let footer = flow.child("div", { className: "bubbleFooter" });
     mkNoteFooter(flow, footer, note);
+}
+
+function mkSuggestion(flow: Flow, note: Note) {
+    let container = flow.child("div");
+    let suggestion = flow.elem(container, "div");
+    flow.bind(() => {
+        if (note.suggestedChanges)
+            renderDiff(suggestion, note.text, note.suggestedChanges ?? '');
+        else
+            suggestion.innerText = '';
+    });
+    flow.conditionalStyle(container, "noDisp", () => !note.suggestedChanges);
+}
+
+function renderDiff(parent: HTMLElement, before: string, after: string) {
+    // render out html elements into the parent
+    parent.innerHTML = '';
+    parent.classList.add('diff');
+    let a = before.match(/\S+\s*/g) || [];
+    let b = after.match(/\S+\s*/g) || [];
+    let diffArr = diff(a, b);
+    for (const d of diffArr) {
+        const span = document.createElement('span');
+        span.className = d.type;
+        span.textContent = d.lines.map(l => l.text).join('');
+        parent.appendChild(span);
+    }
 }
 
 function mkConflictResolver(flow: Flow, note: Note) {
@@ -116,8 +147,9 @@ function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
             summary: folder?.summary,
             vocab: folder?.vocab,
         });
-        if (response.success) {
-            console.log(response.response);
+        if (response.success && response.response) {
+            // TODO: this is a race condition if something else touches the suggestion
+            note.suggestedChanges = response.response as string;
         }
     });
     let mUndelete = mkMoreMenuOpt(flow, mnuNote, "Undelete Note", () => {
