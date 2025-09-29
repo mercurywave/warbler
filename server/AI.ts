@@ -104,8 +104,18 @@ export function pcs(input?: string): string {
         .trim()
         .split('\n')
         .map(s => s.trim()) // trim each line
-        .filter(s => s !=='') // remove empties
+        .filter(s => s !== '') // remove empties
         .join('\n'); // join back up
+}
+// Prompt Clean Manual - leading "_" character indicates continuation
+export function pcm(input?: string): string {
+    return (input ?? '')
+        .trim()
+        .split('\n')
+        .map(s => s.trim()) // trim each line
+        // insert line breaks, unless _
+        .map(s => (s.length > 0 && s[0] == '_') ? (' ' + s.slice(1)) : ('\n' + s))
+        .join('').trim(); // join back up without a splitter
 }
 
 export namespace AiApis {
@@ -123,43 +133,52 @@ export namespace AiApis {
         let parse = zInput.safeParse(req.body);
         if (parse.success) {
             let { raw, summary, vocab } = parse.data;
-            const divider = '\n\n';
 
-            let prompt:string;
+            let prompt: string;
+            let rules = pcs(`
+                RULES:
+                * Remove filler and repetition
+                * Do NOT add any interpretation or context
+                * Minimize changes from the original.
+                * When complete, output <<<DONE>>>
+            `);
 
-            if(summary || vocab){
-                if(vocab) vocab = `<<VOCABULARY>>\n\n${vocab}`;
-                prompt = pcl(`
-                    Given the following raw transcript, please provide a refined version
-                    that is clear and concise. Use the provided references to ensure accuracy
-                    and maintain meaning, while removing filler and repetition.
+            if (summary || vocab) {
+                if (vocab) vocab = `<<<VOCABULARY>>>\n\n${vocab}`;
+                prompt = pcm(`
+                    You are an experienced secretary.
+                    _Given the following automated transcript, please provide a refined version
+                    _that is clear and concise. Use the provided references to ensure accuracy.
 
-                    When complete, output <<DONE>>
-
-                    <<REFERENCES>>
-
+                    ${rules}
+                    <<<REFERENCES>>>
                     ${summary ?? ''}
-
                     ${vocab ?? ''}
                 `);
 
             } else {
-                prompt = pcl(`
-                    Given the following raw transcript, please provide a refined version
-                    that is clear and concise. Maintain meaning, while removing filler and repetition.
-
-                    When complete, output <<DONE>>
+                prompt = pcm(`
+                    You are an experienced secretary.
+                    _Given the following automated transcript, please provide a refined version
+                    _that is clear and concise.
+                    ${rules}
                 `);
             }
-            prompt = "\n" + pcs(`
-                <<TRANSCRIPT>>
-                ${raw.replace(/\n/g, "\n\n")}
-                <<CLEANED TRANSCRIPT>>
+            prompt += "\n" + pcs(`
+                <<<TRANSCRIPT>>>
+                ${raw}
+                <<<DONE>>>
+                <<<CLEANED TRANSCRIPT>>>
             `);
 
-            let result = await AI.generate(model, prompt, '<<DONE>>');
+            let result = await AI.generate(model, prompt, '<<<DONE>>>');
 
-            res.json(result);
+            // maybe has trouble with the number of <'s before DONE
+            if (result[result.length - 1] === "<") {
+                result = result.slice(0, -1);
+            }
+
+            res.json(result.trim());
         } else {
             console.error(z.treeifyError(parse.error));
             res.status(400).json({ error: parse.error });

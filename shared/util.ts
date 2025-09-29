@@ -123,7 +123,7 @@ export namespace Rest {
         return _post<T>(baseUrl, path, bodyObj, 3000);
     }
     export function postLong<T>(baseUrl: string, path: string, bodyObj: any): Promise<OResult<T>> {
-        return _post<T>(baseUrl, path, bodyObj);
+        return _post<T>(baseUrl, path, bodyObj, 1000 * 60 * 5);
     }
     export async function _post<T>(baseUrl: string, path: string, bodyObj: any, timeoutMs?: number): Promise<OResult<T>> {
         if (!baseUrl) return new OResult(false, 'URL is required');
