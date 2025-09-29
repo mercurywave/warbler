@@ -340,6 +340,31 @@ body {
     color: #fff !important;
 }
 
+.diff .edit{
+    color: #b97714;
+}
+.diff .delete{
+    color: #9a3a2f;
+    text-decoration: line-through;
+}
+.diff .insert{
+    color: #70a450;
+}
+
+.btSuggestion {
+    background: none;
+    border: 0;
+    outline: 0;
+    border-radius: 3px;
+    color: #A2A59B;
+    outline: 1px solid #A2A59B;
+    margin: 4px 10px;
+}
+.btSuggestion:hover{
+    color: #fff;
+    outline: 1px solid #fff;
+}
+
 
 .pendRec {
     font-size: smaller;

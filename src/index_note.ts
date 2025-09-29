@@ -3,9 +3,11 @@ import { Flow, Route } from "./flow";
 import { Folder } from "./folder";
 import { Note } from "./note";
 import { Speech } from "./speech";
-import { util } from "@shared/util";
+import { Rest, util } from "@shared/util";
 import { View } from "./view";
 import { simpleCollapsableSection } from "./common";
+import { Config } from "./settings";
+import { diff } from "@shared/diff";
 
 export function mkNoteControl(flow: Flow, note: Note) {
     let root = flow.root("div", { className: "bubble" });
@@ -21,6 +23,7 @@ export function mkNoteControl(flow: Flow, note: Note) {
         edit.value = note.text;
         updateSize();
     });
+    flow.conditionalStyle(wrapper, "noDisp", () => !!note.suggestedChanges);
     edit.addEventListener("change", () => {
         note.text = edit.value;
         Flow.Dirty();
@@ -38,6 +41,8 @@ export function mkNoteControl(flow: Flow, note: Note) {
         root.scrollIntoView();
     });
 
+    mkSuggestion(flow, note);
+
     let recordings = flow.child("div");
     flow.bindArray(() => note._pendingAudio, Speech.mkRecordWidget, recordings);
 
@@ -46,6 +51,60 @@ export function mkNoteControl(flow: Flow, note: Note) {
 
     let footer = flow.child("div", { className: "bubbleFooter" });
     mkNoteFooter(flow, footer, note);
+}
+
+function mkSuggestion(flow: Flow, note: Note) {
+    let container = flow.child("div");
+    let suggestion = flow.elem(container, "div");
+    flow.conditionalStyle(container, "noDisp", () => !note.suggestedChanges);
+    
+    let span = flow.elem(container, "span");
+    let btAccept = flow.elem<HTMLButtonElement>(span, "button", {
+        type: "button",
+        innerText: "Accept",
+        className: "btSuggestion",
+    });
+    btAccept.addEventListener('click', () => note.acceptSuggestion());
+
+    let btClear = flow.elem<HTMLButtonElement>(span, "button", {
+        type: "button",
+        innerText: "Discard",
+        className: "btSuggestion",
+    });
+    btClear.addEventListener('click', () => note.discardSuggestion());
+
+    let chkMerge = flow.elem<HTMLInputElement>(span, "input", {
+        type: "checkbox",
+        checked: true,
+    })
+    let lblMerge = flow.elem(span, "label", { innerText:'Merge Edits' });
+    chkMerge.addEventListener("change", () => Flow.Dirty());
+    lblMerge.addEventListener("click", () => {
+        chkMerge.checked = !chkMerge.checked;
+        Flow.Dirty();
+    });
+    
+    flow.bind(() => {
+        if (note.suggestedChanges)
+            renderDiff(suggestion, note.text, note.suggestedChanges ?? '', chkMerge.checked);
+        else
+            suggestion.innerText = '';
+    });
+}
+
+function renderDiff(parent: HTMLElement, before: string, after: string, mergeEdits: boolean) {
+    // render out html elements into the parent
+    parent.innerHTML = '';
+    parent.classList.add('diff');
+    let a = before.match(/\S+\s*/g) || [];
+    let b = after.match(/\S+\s*/g) || [];
+    let diffArr = diff(a, b, mergeEdits);
+    for (const d of diffArr) {
+        const span = document.createElement('span');
+        span.className = d.type;
+        span.textContent = d.lines.map(l => l.text).join('');
+        parent.appendChild(span);
+    }
 }
 
 function mkConflictResolver(flow: Flow, note: Note) {
@@ -108,6 +167,19 @@ function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
     });
 
     let mnuNote = mkMoreMenu(flow, span);
+    let mCleanupAudio = mkMoreMenuOpt(flow, mnuNote, "Clean Transcript", async () => {
+        let folder = note.folder;
+        let response = await Rest.postLong(Config.getBackendUrl()!, "v1/cleanupTranscript", {
+            raw: note.text,
+            summary: folder?.summary,
+            vocab: folder?.vocab,
+        });
+        console.log("Cleaned transcript:", response.response);
+        if (response.success && response.response) {
+            // TODO: this is a race condition if something else touches the suggestion
+            note.suggestedChanges = response.response as string;
+        }
+    });
     let mUndelete = mkMoreMenuOpt(flow, mnuNote, "Undelete Note", () => {
         note.isDeleted = false;
     });
@@ -125,6 +197,7 @@ function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
         mUndelete.hidden = !note.isDeleted;
         mHardDelete.hidden = !note.isDeleted;
         mDelete.hidden = note.isDeleted;
+        mCleanupAudio.hidden = !Config.getBackendUrl();
     });
 }
 

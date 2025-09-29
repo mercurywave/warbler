@@ -84,6 +84,7 @@ export class Note {
         Flow.Dirty();
     }
 
+    // conflicts only occur when the server failed to apply a local change
     public get conflicts(): string[] { return this._meta.conflicts ?? []; }
     public get isConflicted(): boolean { return (this._meta.conflicts?.length ?? 0) > 0; }
     public clearConflicts() {
@@ -93,6 +94,26 @@ export class Note {
         DB.SaveNoteLocally(this);
     }
     public get preConflictText(): string { return this._meta.preConflictText ?? ''; }
+
+    // these are temporary AI changes that need review
+    public get suggestedChanges(): string | Nil { return this._meta.suggestedChanges; }
+    public set suggestedChanges(val: string) { 
+        this._meta.suggestedChanges = val;
+        DB.SaveNoteLocally(this);
+        Flow.Dirty();
+    }
+    public acceptSuggestion() {
+        if (!this.suggestedChanges) return;
+        this.text = this._meta.suggestedChanges ?? '';
+        delete this._meta.suggestedChanges;
+        this.FlagDirty();
+        Flow.Dirty();
+    }
+    public discardSuggestion() {
+        delete this._meta.suggestedChanges;
+        DB.SaveNoteLocally(this);
+        Flow.Dirty();
+    }
 }
 
 export class PendingTranscription {
@@ -137,6 +158,7 @@ export interface NoteMeta {
     lastSyncText: string;
     conflicts?: string[];
     preConflictText?: string;
+    suggestedChanges?: string;
 }
 
 //what is saved to files
