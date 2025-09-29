@@ -46,6 +46,7 @@ app.post('/v1/updateFolders', FolderApis.postUpdateFolders);
 
 
 app.post('/v1/summarizeFolder', AiApis.postSummarizeFolder);
+app.post('/v1/cleanupTranscript', AiApis.postCleanupTranscript);
 app.post('/v1/folderVocab', AiApis.postExtractFolderVocab);
 
 

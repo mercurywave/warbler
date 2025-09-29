@@ -90,7 +90,7 @@ export class AIServer {
 export let AI = new AIServer(process.env.LLM_TYPE ?? '', process.env.LLM_URL ?? '');
 
 // Prompt Clean - clean up multi-line prompts
-export function pc(input?: string): string {
+export function pcl(input?: string): string {
     return (input ?? '')
         .trim()
         .split('\n')
@@ -98,8 +98,73 @@ export function pc(input?: string): string {
         .map(s => s === '' ? '\n' : s) //make sure double lines are line breaks
         .join(''); // join back up without a splitter
 }
+// Prompt Clean Short - leave line breaks if not blank
+export function pcs(input?: string): string {
+    return (input ?? '')
+        .trim()
+        .split('\n')
+        .map(s => s.trim()) // trim each line
+        .filter(s => s !=='') // remove empties
+        .join('\n'); // join back up
+}
 
 export namespace AiApis {
+    export async function postCleanupTranscript(req: Request, res: Response): Promise<void> {
+        const zInput = z.object({
+            raw: z.string(),
+            summary: z.string().optional(),
+            vocab: z.string().optional(),
+        });
+        let model = AI.summaryModel;
+        if (!model || !AI.isEnabled) {
+            res.status(501).json({ error: 'Summary model not configured' });
+            return;
+        }
+        let parse = zInput.safeParse(req.body);
+        if (parse.success) {
+            let { raw, summary, vocab } = parse.data;
+            const divider = '\n\n';
+
+            let prompt:string;
+
+            if(summary || vocab){
+                if(vocab) vocab = `<<VOCABULARY>>\n\n${vocab}`;
+                prompt = pcl(`
+                    Given the following raw transcript, please provide a refined version
+                    that is clear and concise. Use the provided references to ensure accuracy
+                    and maintain meaning, while removing filler and repetition.
+
+                    When complete, output <<DONE>>
+
+                    <<REFERENCES>>
+
+                    ${summary ?? ''}
+
+                    ${vocab ?? ''}
+                `);
+
+            } else {
+                prompt = pcl(`
+                    Given the following raw transcript, please provide a refined version
+                    that is clear and concise. Maintain meaning, while removing filler and repetition.
+
+                    When complete, output <<DONE>>
+                `);
+            }
+            prompt = "\n" + pcs(`
+                <<TRANSCRIPT>>
+                ${raw.replace(/\n/g, "\n\n")}
+                <<CLEANED TRANSCRIPT>>
+            `);
+
+            let result = await AI.generate(model, prompt, '<<DONE>>');
+
+            res.json(result);
+        } else {
+            console.error(z.treeifyError(parse.error));
+            res.status(400).json({ error: parse.error });
+        }
+    }
     export async function postExtractFolderVocab(req: Request, res: Response): Promise<void> {
         const VId = z.object({
             id: z.guid(),
@@ -124,7 +189,7 @@ export namespace AiApis {
             let summaries: string[] = [];
             for (const chunk of noteChunks) {
 
-                let prompt = pc(`
+                let prompt = pcl(`
                     Extract all jargon and shorthand from the following loose notes from the user
                     and provide a simple (<6 word!) reference description for each term or proper noun.
                     Output a bulleted list in the form "- Term: Description".
@@ -182,7 +247,7 @@ export namespace AiApis {
             let summaries: string[] = [];
             for (const chunk of noteChunks) {
 
-                let prompt = pc(`
+                let prompt = pcl(`
                     Summarize the overall subject and purpsoe of these note(s) 
                     into 2-4 sentences, then stop.
 
