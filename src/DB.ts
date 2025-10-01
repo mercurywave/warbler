@@ -97,7 +97,7 @@ export namespace DB {
             lastSyncText: '',
         }
         let note = new Note(meta);
-        if (folder) note.data.folderId = folder.id;
+        if (folder) folder.addNote(note);
         _notes.push(note);
         return note;
     }
@@ -110,6 +110,7 @@ export namespace DB {
             title: "",
             v: 1,
             creationUtc: now,
+            children: [],
         };
         let folder = new Folder(inner);
         _folders.push(folder);
@@ -151,9 +152,9 @@ export namespace DB {
                             note._meta.needsFileSave = false;
                             note._meta.lastSyncText = note.text;
                             note._meta.conflicts = conflicts.length > 0 ? conflicts : undefined;
-                            if(preData !== note.text) {
+                            if (preData !== note.text) {
                                 note._meta.preConflictText = preData;
-                                if(conflicts.length == 0) {
+                                if (conflicts.length == 0) {
                                     console.warn(`
                                         Server didn't report a conflict, but the text was modified.
                                         Possible bug in conflict handling, though might be a timing
@@ -315,6 +316,10 @@ export namespace DB {
     export function ConflictedNotes(): Note[] { return _notes.filter(n => n.isConflicted); }
 
     export function AllFolders(): Folder[] { return _folders; }
+
+    export function TryGetNoteFolder(note: Note): Folder | Nil {
+        return _folders.find(f => f.childrenIds.includes(note.id));
+    }
 
     export function TryGetParent(note: Note): Note | Nil {
         return _notes.find(n => n.childrenIds.includes(note.id));

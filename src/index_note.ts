@@ -57,7 +57,7 @@ function mkSuggestion(flow: Flow, note: Note) {
     let container = flow.child("div");
     let suggestion = flow.elem(container, "div");
     flow.conditionalStyle(container, "noDisp", () => !note.suggestedChanges);
-    
+
     let span = flow.elem(container, "span");
     let btAccept = flow.elem<HTMLButtonElement>(span, "button", {
         type: "button",
@@ -77,13 +77,13 @@ function mkSuggestion(flow: Flow, note: Note) {
         type: "checkbox",
         checked: true,
     })
-    let lblMerge = flow.elem(span, "label", { innerText:'Merge Edits' });
+    let lblMerge = flow.elem(span, "label", { innerText: 'Merge Edits' });
     chkMerge.addEventListener("change", () => Flow.Dirty());
     lblMerge.addEventListener("click", () => {
         chkMerge.checked = !chkMerge.checked;
         Flow.Dirty();
     });
-    
+
     flow.bind(() => {
         if (note.suggestedChanges)
             renderDiff(suggestion, note.text, note.suggestedChanges ?? '', chkMerge.checked);
@@ -108,7 +108,7 @@ function renderDiff(parent: HTMLElement, before: string, after: string, mergeEdi
             const line = document.createElement('span');
             line.textContent = split[i];
             span.appendChild(line);
-            if(i !== split.length - 1 && d.type !== 'delete')
+            if (i !== split.length - 1 && d.type !== 'delete')
                 span.appendChild(document.createElement('br'));
         }
         parent.appendChild(span);
@@ -247,7 +247,10 @@ function mkNoteFolderPicker(flow: Flow, span: HTMLElement, note: Note) {
         dropDown.value = note.folder?.id ?? "";
     });
     dropDown.addEventListener("change", () => {
-        note.folderId = dropDown.value;
+        let prevFolder = note.folder;
+        let folder = DB.GetFolderById(dropDown.value);
+        prevFolder?.removeNote(note);
+        folder?.addNote(note);
         Flow.Dirty();
     });
 }

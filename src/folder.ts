@@ -1,5 +1,6 @@
 import { Nil } from "@shared/util";
 import { DB } from "./DB";
+import { Note } from "./note";
 
 
 // in-memory interface
@@ -28,16 +29,31 @@ export class Folder {
     public get id(): string { return this._data.id; }
 
     public get summary(): string | Nil { return this._data.summary; }
-    public set summary(value: string | Nil) { 
-        if(value) this._data.summary = value;
+    public set summary(value: string | Nil) {
+        if (value) this._data.summary = value;
         else delete this._data.summary;
         this.FlagDirty();
     }
 
     public get vocab(): string | Nil { return this._data.vocab; }
-    public set vocab(value: string | Nil) { 
-        if(value) this._data.vocab = value;
+    public set vocab(value: string | Nil) {
+        if (value) this._data.vocab = value;
         else delete this._data.vocab;
+        this.FlagDirty();
+    }
+
+    public get childrenIds(): string[] { return [...this._data.children]; }
+    public get children(): Note[] {
+        return this.childrenIds
+            .map(i => DB.GetNoteById(i))
+            .filter(n => !!n);
+    }
+    public addNote(note: Note) {
+        this._data.children.push(note.id);
+        this.FlagDirty();
+    }
+    public removeNote(note: Note) {
+        this._data.children = this._data.children.filter(i => i != note.id);
         this.FlagDirty();
     }
 }
@@ -52,4 +68,5 @@ export interface FolderData {
     lastEdit?: string;
     summary?: string;
     vocab?: string;
+    children: string[];
 }

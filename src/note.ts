@@ -28,15 +28,9 @@ export class Note {
     public get data(): NoteData { return this._meta.data }
     public get id(): string { return this.data.id; }
 
-    public get folderId(): string | Nil { return this.data.folderId; }
-    public set folderId(value: string | Nil) {
-        if (value === "") value = undefined;
-        this.data.folderId = value ?? undefined;
-        this.FlagDirty();
-    }
+    public get folderId(): string | Nil { return DB.TryGetNoteFolder(this)?.id; }
     public get folder(): Folder | Nil {
-        let id = this.folderId;
-        return DB.AllFolders().find(f => f.id === id);
+        return DB.TryGetNoteFolder(this);
     }
     public get creationUtc(): Date { return new Date(this.data.creationUtc); }
 
@@ -167,7 +161,6 @@ export interface NoteData {
     id: string;
     //title: string;
     text: string;
-    folderId?: string;
     tags: string[];
     childrenIds: string[];
     deleted?: boolean;
