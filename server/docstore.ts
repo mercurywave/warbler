@@ -50,6 +50,11 @@ export class DocStore<T> {
         }
     }
 
+    public saveOverwriteSync(id: string, obj: T){
+        let file = this._getFile(id);
+        fs.writeFileSync(file, JSON.stringify(obj));
+    }
+
     public load(id: string): T | null {
         let file = this._getFile(id);
         if (fs.existsSync(file)) {

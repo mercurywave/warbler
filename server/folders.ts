@@ -12,6 +12,7 @@ const VFolderData = z.object({
     lastEdit: z.string().optional().refine(util.zValidDate),
     summary: z.string().optional(),
     vocab: z.string().optional(),
+    children: z.array(z.guid()),
 });
 type FolderData = z.infer<typeof VFolderData>;
 
