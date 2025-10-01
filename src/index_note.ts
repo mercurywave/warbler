@@ -102,7 +102,15 @@ function renderDiff(parent: HTMLElement, before: string, after: string, mergeEdi
     for (const d of diffArr) {
         const span = document.createElement('span');
         span.className = d.type;
-        span.textContent = d.lines.map(l => l.text).join('');
+        let text = d.lines.map(l => l.text).join('');
+        let split = text.split('\n');
+        for (let i = 0; i < split.length; i++) {
+            const line = document.createElement('span');
+            line.textContent = split[i];
+            span.appendChild(line);
+            if(i !== split.length - 1 && d.type !== 'delete')
+                span.appendChild(document.createElement('br'));
+        }
         parent.appendChild(span);
     }
 }
