@@ -41,6 +41,11 @@ export class ViewData {
         this._notes = notes; // TODO: truncate
     }
 
+    public setOrderedWithChildren(notes: Note[]) {
+        let notesWithChildren = notes.map(n => n.getChildNoteCluster()).flat();
+        this.setOrdered(notesWithChildren);
+    }
+
     // will automatically include children notes along side the main note
     public setChronResults(notes: Note[]) {
         notes.sort((a, b) => a.creationUtc.getTime() - b.creationUtc.getTime());
@@ -124,8 +129,7 @@ export namespace View {
 
     export function Folder(folder: Folder) {
         reset(eView.Folder);
-        let list = DB.AllParents().filter(n => n.folderId === folder.id);
-        _data.setChronResults(list);
+        _data.setOrderedWithChildren(folder.children);
         _data.folder = folder;
         _data.title = "Folder";
         finalize();
