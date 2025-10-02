@@ -49,6 +49,30 @@ export class Note {
         this.data.childrenIds.push(child.id);
         this.FlagDirty();
     }
+    public insertChild(child: Note, before?: Note) {
+        let idx = before ? this.data.childrenIds.indexOf(before.id) : -1;
+        if (idx < 0)
+            this.data.childrenIds.push(child.id);
+        else
+            this.data.childrenIds.splice(idx, 0, child.id);
+        this.FlagDirty();
+    }
+    public insertChildAfter(child: Note, after?: Note) {
+        let idx = after ? this.data.childrenIds.indexOf(after.id) : -1;
+        if (idx < 0)
+            this.data.childrenIds.splice(0, 0, child.id);
+        else
+            this.data.childrenIds.splice(idx + 1, 0, child.id);
+        this.FlagDirty();
+    }
+    public insertRelative(child: Note, relative: Note, under: boolean) {
+        if (under) this.insertChildAfter(child, relative);
+        else this.insertChild(child, relative);
+    }
+    public removeChild(child: Note) {
+        this.data.childrenIds = this.data.childrenIds.filter(c => c !== child.id);
+        this.FlagDirty();
+    }
 
     public StartNewRecording(recording: RecordJob): PendingTranscription {
         let trans = new PendingTranscription(this, recording);
@@ -91,7 +115,7 @@ export class Note {
 
     // these are temporary AI changes that need review
     public get suggestedChanges(): string | Nil { return this._meta.suggestedChanges; }
-    public set suggestedChanges(val: string) { 
+    public set suggestedChanges(val: string) {
         this._meta.suggestedChanges = val;
         DB.SaveNoteLocally(this);
         Flow.Dirty();

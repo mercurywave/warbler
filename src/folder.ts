@@ -52,6 +52,26 @@ export class Folder {
         this._data.children.push(note.id);
         this.FlagDirty();
     }
+    public insertNote(child: Note, before?: Note) {
+        let idx = before ? this._data.children.indexOf(before.id) : -1;
+        if (idx < 0)
+            this._data.children.push(child.id);
+        else
+            this._data.children.splice(idx, 0, child.id);
+        this.FlagDirty();
+    }
+    public insertNoteAfter(child: Note, after?: Note) {
+        let idx = after ? this._data.children.indexOf(after.id) : -1;
+        if (idx < 0)
+            this._data.children.splice(0, 0, child.id);
+        else
+            this._data.children.splice(idx + 1, 0, child.id);
+        this.FlagDirty();
+    }
+    public insertRelative(child: Note, relative: Note, under: boolean) {
+        if (under) this.insertNoteAfter(child, relative);
+        else this.insertNote(child, relative);
+    }
     public removeNote(note: Note) {
         this._data.children = this._data.children.filter(i => i != note.id);
         this.FlagDirty();

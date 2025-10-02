@@ -9,9 +9,82 @@ import { simpleCollapsableSection } from "./common";
 import { Config } from "./settings";
 import { diff } from "@shared/diff";
 
-export function mkNoteControl(flow: Flow, note: Note) {
-    let root = flow.root("div", { className: "bubble" });
+export function mkNoteWrapper(flow: Flow, note: Note) {
     let view = View.CurrView();
+    let root = flow.root("div", { className: "bubble-wrap", draggable: view.canReorder });
+
+    let inner = flow.child("div", { className: "bubble" });
+    flow.placeholder(f => mkNoteControl(f, note), inner, () => true);
+
+    let mask = flow.child("div", { className: "drag-mask noDisp" });
+    flow.elem(mask, "div", { className: "drag-mask-fill" });
+
+    flow.bindTelegram("note/dragstart", null, () => mask.classList.remove("noDisp"));
+    flow.bindTelegram("note/dragend", null, () => {
+        mask.classList.add("noDisp");
+        root.classList.remove('drop-over');
+        root.classList.remove('drop-under');
+    });
+
+    root.addEventListener("dragstart", e => {
+        if (!e.dataTransfer) return;
+        e.dataTransfer.setData('note/id', note.id);
+        e.dataTransfer.effectAllowed = 'move';
+        Flow.BroadcastTelegram("note/dragstart", note);
+    });
+
+    root.addEventListener("dragend", e => {
+        if (!e.dataTransfer) return;
+        Flow.BroadcastTelegram("note/dragend", note);
+    });
+
+    mask.addEventListener("dragover", e => {
+        e.preventDefault();
+        const rect = mask.getBoundingClientRect();
+        const mouseY = e.clientY;
+        let bottomThreshold = rect.bottom - 20;
+        if (root.classList.contains('drop-under')) bottomThreshold -= 10; // minimize thrashing
+        root.classList.toggle('drop-over', mouseY < bottomThreshold);
+        root.classList.toggle('drop-under', mouseY >= bottomThreshold);
+    });
+
+    mask.addEventListener("dragleave", (e) => {
+        if (e.dataTransfer?.types[0] !== 'note/id') return;
+        e.preventDefault();
+        root.classList.remove('drop-over');
+        root.classList.remove('drop-under');
+    });
+
+    mask.addEventListener("drop", (e) => {
+        e.preventDefault();
+        let sourceId = e.dataTransfer?.getData('note/id');
+        if (!sourceId) return;
+        let dropper = DB.GetNoteById(sourceId);
+        if (!dropper || dropper === note) return;
+        let under = root.classList.contains('drop-under');
+
+        let par = dropper.parent;
+        let folder = dropper.folder;
+        par?.removeChild(dropper);
+        folder?.removeNote(dropper);
+        if (note.isChild) {
+            let newPar = note.parent;
+            if (!newPar) throw `Note ${note.id} does not have a parent, but thinks it's a child?`;
+            newPar.insertRelative(dropper, note, under);
+        }
+        else {
+            if (under)
+                note.insertChildAfter(dropper);
+            else
+                note.folder?.insertNote(dropper, note);
+        }
+        view.repopulate();
+    });
+}
+
+function mkNoteControl(flow: Flow, note: Note) {
+    let view = View.CurrView();
+    let root = flow._root!;
     flow.conditionalStyle(root, "childNote", () => note.isChild && view.groupByParents);
     flow.conditionalStyle(root, "orphanedNote", () => note.isChild && !view.groupByParents);
 

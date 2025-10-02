@@ -5,7 +5,7 @@ import { View, ViewData } from "./view";
 import { scalableTextarea, simpleCollapsableSection } from "./common";
 import { Config } from "./settings";
 import { Search } from "./search";
-import { mkNoteControl } from "./index_note";
+import { mkNoteWrapper } from "./index_note";
 
 
 export function mkMain(flow: Flow, view: ViewData) {
@@ -87,7 +87,7 @@ function mkEditFolderName(flow: Flow) {
 
 function rendNotesList(flow: Flow) {
     let view = View.CurrView();
-    let bind = flow.bindArray(() => view.notes, mkNoteControl);
+    let bind = flow.bindArray(() => view.notes, mkNoteWrapper);
     bind.setAnimRemoval(200, "fade-out");
 }
 

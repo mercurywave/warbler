@@ -16,6 +16,7 @@ export class ViewData {
     public showingDeleted: boolean = false;
     public groupByParents: boolean = true;
     public searchTerm: string = '';
+    public populator: () => void = () => { };
 
     public constructor(type: eView) {
         this.type = type;
@@ -29,6 +30,8 @@ export class ViewData {
     public get canAddNotes(): boolean {
         return this.type != eView.Settings && this.type != eView.None && !this.showingDeleted;
     }
+
+    public get canReorder(): boolean { return !!this.folder; }
 
     public get focusOnBottom(): boolean {
         return this.canAddNotes && this.type !== eView.Search;
@@ -75,6 +78,10 @@ export class ViewData {
         this._fullResults = this._fullResults.filter(n => n !== note);
         this._notes = this._notes.filter(n => n !== note);
     }
+    public repopulate() {
+        this.populator();
+        Flow.Dirty();
+    }
 }
 
 export enum eView {
@@ -90,8 +97,12 @@ export namespace View {
 
     export function CurrView(): ViewData { return _data; }
 
-    function reset(type: eView) {
+    function reset(type: eView, populator?: () => void) {
         _data = new ViewData(type);
+        if (populator) {
+            _data.populator = populator;
+            populator();
+        }
     }
 
     function finalize() {
@@ -104,23 +115,22 @@ export namespace View {
     }
 
     export function Unsorted() {
-        reset(eView.Unsorted);
-        let list = DB.AllParents().filter(n => !n.folderId);
-        _data.setChronResults(list);
+        reset(eView.Unsorted, () => {
+            let list = DB.AllParents().filter(n => !n.folderId);
+            _data.setChronResults(list);
+        });
         _data.title = "Unsorted";
         finalize();
     }
 
     export function ShowAll() {
-        reset(eView.All);
-        _data.setChronResults(DB.AllParents());
+        reset(eView.All, () => _data.setChronResults(DB.AllParents()));
         _data.title = "All";
         finalize();
     }
 
     export function Deleted() {
-        reset(eView.Deleted);
-        _data.setChronResults(DB.DeletedNotes());
+        reset(eView.Deleted, () => _data.setChronResults(DB.DeletedNotes()));
         _data.title = "Recycle Bin";
         _data.showingDeleted = true;
         _data.groupByParents = false;
@@ -128,23 +138,20 @@ export namespace View {
     }
 
     export function Folder(folder: Folder) {
-        reset(eView.Folder);
-        _data.setOrderedWithChildren(folder.children);
+        reset(eView.Folder, () => _data.setOrderedWithChildren(folder.children));
         _data.folder = folder;
         _data.title = "Folder";
         finalize();
     }
 
     export function SingleNote(note: Note) {
-        reset(eView.SingleNote);
-        _data.setChronResults([note]);
+        reset(eView.SingleNote, () => _data.setChronResults([note]));
         _data.title = "Note";
         finalize();
     }
 
     export function Search(notes: Note[], term: string) {
-        reset(eView.Search);
-        _data.setOrdered(notes);
+        reset(eView.Search, () => _data.setOrdered(notes));
         _data.title = "Search Results";
         _data.groupByParents = false;
         _data.searchTerm = term;
@@ -152,8 +159,7 @@ export namespace View {
     }
 
     export function Conflicted() {
-        reset(eView.Conflicted);
-        _data.setChronResults(DB.ConflictedNotes());
+        reset(eView.Conflicted, () => _data.setChronResults(DB.ConflictedNotes()));
         _data.title = "Conflicted";
         _data.groupByParents = false;
         finalize();

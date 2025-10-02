@@ -69,6 +69,12 @@ export class Flow {
         }, 0);
     }
 
+    public static BroadcastTelegram(type: string, data: any) {
+        let flows = [...__allFlows];
+        flows.sort((a, b) => a._depth - b._depth);
+        flows.forEach(f => f.processTelegrams(type, data));
+    }
+
     public static Cleanup() {
         let toRemove = __allFlows.filter(r => !r._isConnected);
         for (const route of toRemove) {
@@ -108,6 +114,21 @@ export class Flow {
         });
     }
 
+    public bindTelegram(type: string, test: ((data: any) => boolean) | Nil, handler: ((type: string, data: any) => void)) {
+        // telegrams work in parallel to state reflows, and are just simple global events
+        // these should generally avoid modifying state, and just handle minor side effects
+        this._telegramOffices.push((t, data) => {
+            if (type !== t) return;
+            if (test && !test(data)) return;
+            handler(t, data);
+        });
+    }
+
+    public processTelegrams(type: string, data: any) {
+        if (this._dying || !this._isConnected) { return; }
+        this._telegramOffices.forEach(act => act(type, data));
+    }
+
     private _ancestor: Flow | null;
     public _depth: number;
     public _boundValue: any;
@@ -115,6 +136,7 @@ export class Flow {
     private _actions: (() => void)[] = [];
     private _cleanupActions: (() => void)[] = [];
     private _arrays: BoundList<any>[] = [];
+    private _telegramOffices: ((type: string, data: any) => void)[] = [];
     public _dying: boolean = false;
 
     constructor(ancestor: Flow | null, root: HTMLElement | Nil, boundValue?: any) {
