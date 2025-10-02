@@ -97,6 +97,23 @@ function mkNoteControl(flow: Flow, note: Note) {
         updateSize();
     });
     flow.conditionalStyle(wrapper, "noDisp", () => !!note.suggestedChanges);
+    edit.addEventListener('keydown', e => {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = edit.selectionStart;
+            const end = edit.selectionEnd;
+
+            const newValue = edit.value.substring(0, start) +
+                '\t' + edit.value.substring(end);
+
+            edit.value = newValue;
+
+            setTimeout(() => {
+                edit.selectionStart = start + 1;
+                edit.selectionEnd = start + 1;
+            }, 0);
+        }
+    });
     edit.addEventListener("change", () => {
         note.text = edit.value;
         Flow.Dirty();
