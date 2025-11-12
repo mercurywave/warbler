@@ -7,8 +7,18 @@ import { View } from "./view";
 
 
 export function mkNavigation(flow: Flow) {
-    flow.root("div", { id: "navigation" });
+    let root = flow.root("div", { id: "navigation" });
     let container = flow.child("div", { id: "nav-main" });
+
+    let btCollapse = flow.elem<HTMLButtonElement>(container, "button", {
+        type: "button",
+        innerText: "☰",
+        id: "bt-nav-collapse",
+    });
+    btCollapse.addEventListener("click", () => {
+        root.classList.toggle("collapsed");
+    });
+    
     let search = flow.elem(container, "div");
     flow.bindCtl(mkSearch, search);
     let btAll = flow.elem<HTMLButtonElement>(container, "button", {

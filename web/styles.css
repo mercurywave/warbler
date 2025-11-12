@@ -17,6 +17,14 @@ body {
     display: flex;
     flex-direction: column;
 }
+#bt-nav-collapse{
+    width: 30px;
+    align-self: flex-start;
+    background: none;
+    border: none;
+    color: #fff;
+    margin-bottom: 5px;
+}
 
 #main {
     flex-grow: 1;
