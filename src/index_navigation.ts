@@ -8,9 +8,8 @@ import { View } from "./view";
 
 export function mkNavigation(flow: Flow) {
     let root = flow.root("div", { id: "navigation" });
-    let container = flow.child("div", { id: "nav-main" });
 
-    let btCollapse = flow.elem<HTMLButtonElement>(container, "button", {
+    let btCollapse = flow.elem<HTMLButtonElement>(root, "button", {
         type: "button",
         innerText: "☰",
         id: "bt-nav-collapse",
@@ -18,6 +17,8 @@ export function mkNavigation(flow: Flow) {
     btCollapse.addEventListener("click", () => {
         root.classList.toggle("collapsed");
     });
+    
+    let container = flow.child("div", { id: "nav-main" });
     
     let search = flow.elem(container, "div");
     flow.bindCtl(mkSearch, search);

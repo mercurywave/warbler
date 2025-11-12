@@ -12,12 +12,17 @@ body {
     width: 200px;
     border-right: 1px solid #202A33;
     display: flex;
+    flex-direction: column;
+    position: relative;
 }
+
 #nav-main {
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
-#bt-nav-collapse{
+
+#bt-nav-collapse {
     width: 30px;
     align-self: flex-start;
     background: none;
@@ -33,6 +38,38 @@ body {
     justify-content: center;
     height: 100%;
     padding: 0 10px 0 0;
+}
+
+@media (max-width: 499px) {
+    body {
+        flex-direction: column;
+    }
+
+    #main {
+        margin-left: 20px;
+    }
+
+    #navigation.collapsed #nav-main {
+        display: none;
+    }
+
+    #navigation {
+        width: 200px;
+        height: 100%;
+        border-right: none;
+        position: absolute;
+        z-index: 999;
+        background-color: #14202B;
+    }
+
+    #navigation.collapsed {
+        width: 30px;
+    }
+
+    #navigation:not(.collapsed) {
+        border-right: 1px solid #202A33;
+        box-shadow: 2px 0px 5px 6px rgba(0, 0, 0, 0.5);
+    }
 }
 
 #mainOuter {
@@ -298,6 +335,7 @@ body {
 .drop-over {
     border-top: 5px dashed #ffede2;
 }
+
 .drop-over:has(.childNote) {
     border-top: 5px dashed transparent;
 }
