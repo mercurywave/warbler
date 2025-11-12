@@ -116,7 +116,7 @@ export namespace Speech {
         }
     }
 
-    export function isEnabled(): boolean { return !!audioType(); }
+    export function isEnabled(): boolean { return Config.backendHandlesAsr() || !!audioType(); }
 
     export function audioType(): string | Nil {
         let type = Config.getTranscriptType();
@@ -124,6 +124,8 @@ export namespace Speech {
         return type;
     }
     export function audioUrl(): string | Nil {
+        if(Config.backendHandlesAsr())
+            return Config.getBackendUrl();
         let url = Config.getTranscriptUrl();
         if (!url) return null;
         return url;
