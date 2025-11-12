@@ -9,6 +9,11 @@ services:
     environment:
       NODE_ENV: development
     ports:
-      - 6464:6464
+      - 7373:6464
       - 9229:9229
     command: ["node", "--inspect=0.0.0.0:9229", "./dist-server/index.js"]
+    volumes:
+      - warbler_data:/usr/src/app/data
+
+volumes:
+  warbler_data:
