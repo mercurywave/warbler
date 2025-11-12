@@ -12,6 +12,9 @@ body {
     width: 200px;
     border-right: 1px solid #202A33;
     display: flex;
+}
+#nav-main {
+    display: flex;
     flex-direction: column;
 }
 

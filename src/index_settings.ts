@@ -15,8 +15,8 @@ function serverToOption(svc: IService): Option {
 }
 
 // this lives here to make sure webpack pulls this file in
-export function mkSettingsLauncher(flow: Flow) {
-    let btSettings = flow.child<HTMLButtonElement>("button", {
+export function mkSettingsLauncher(flow: Flow, parent: HTMLElement) {
+    let btSettings = flow.elem<HTMLButtonElement>(parent, "button", {
         id: "btSettings",
         type: "button",
         innerText: "Settings",

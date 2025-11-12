@@ -152,11 +152,15 @@ export class Flow {
     }
 
     public root<T extends HTMLElement>(elemName: keyof HTMLElementTagNameMap, props?: Partial<T>): T {
-        if (this._root) throw 'root already set';
-        let root = document.createElement(elemName) as T;
-        this._applyProps(root, props);
-        this._root = root;
-        return root;
+        if (this._root) {
+            if (this._root.tagName.toUpperCase() !== elemName.toUpperCase())
+                throw "root exists, but doesn't match";
+        }
+        else {
+            this._root = document.createElement(elemName) as T;
+        }
+        this._applyProps(this._root!, props);
+        return this._root as T;
     }
 
     public child<T extends HTMLElement>(elemName: keyof HTMLElementTagNameMap, props?: Partial<T>): T {

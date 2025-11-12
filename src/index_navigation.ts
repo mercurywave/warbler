@@ -8,8 +8,10 @@ import { View } from "./view";
 
 export function mkNavigation(flow: Flow) {
     flow.root("div", { id: "navigation" });
-    flow.bindCtl(mkSearch);
-    let btAll = flow.child<HTMLButtonElement>("button", {
+    let container = flow.child("div", { id: "nav-main" });
+    let search = flow.elem(container, "div");
+    flow.bindCtl(mkSearch, search);
+    let btAll = flow.elem<HTMLButtonElement>(container, "button", {
         type: "button",
         innerText: "All",
         className: "btNavigate",
@@ -18,7 +20,7 @@ export function mkNavigation(flow: Flow) {
         Route.LaunchHome();
     });
 
-    let btConflicted = flow.child<HTMLButtonElement>("button", {
+    let btConflicted = flow.elem<HTMLButtonElement>(container, "button", {
         type: "button",
         className: "btNavigate btConflicts",
     });
@@ -31,7 +33,7 @@ export function mkNavigation(flow: Flow) {
     });
     flow.conditionalStyle(btConflicted, "noDisp", () => DB.ConflictedNotes().length == 0);
 
-    let btUnsorted = flow.child<HTMLButtonElement>("button", {
+    let btUnsorted = flow.elem<HTMLButtonElement>(container, "button", {
         type: "button",
         className: "btNavigate",
     });
@@ -44,7 +46,7 @@ export function mkNavigation(flow: Flow) {
     });
     flow.conditionalStyle(btUnsorted, "noDisp", () => DB.Unsorted().length == 0);
 
-    let btRecycling = flow.child<HTMLButtonElement>("button", {
+    let btRecycling = flow.elem<HTMLButtonElement>(container, "button", {
         type: "button",
         innerText: "Recycle Bin",
         className: "btNavigate",
@@ -54,8 +56,9 @@ export function mkNavigation(flow: Flow) {
     });
     flow.conditionalStyle(btRecycling, "noDisp", () => DB.DeletedNotes().length == 0);
 
-    flow.bindCtl(mkFolderList);
-    mkSettingsLauncher(flow);
+    let folders = flow.elem(container, "div");
+    flow.bindCtl(mkFolderList, folders);
+    mkSettingsLauncher(flow, container);
 }
 
 
