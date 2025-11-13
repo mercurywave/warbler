@@ -18,7 +18,7 @@ export function mkNavigation(flow: Flow) {
         root.classList.toggle("collapsed");
     });
 
-    root.addEventListener("focusout", (e) => {
+    flow.bindTelegram("collapse-sidebar", null, () => {
         root.classList.add("collapsed");
     });
 

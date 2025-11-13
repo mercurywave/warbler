@@ -69,7 +69,7 @@ export class Flow {
         }, 0);
     }
 
-    public static BroadcastTelegram(type: string, data: any) {
+    public static BroadcastTelegram(type: string, data?: any) {
         let flows = [...__allFlows];
         flows.sort((a, b) => a._depth - b._depth);
         flows.forEach(f => f.processTelegrams(type, data));

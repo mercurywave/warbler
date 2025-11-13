@@ -18,6 +18,9 @@ function initUi() {
 function mkRoot(flow: Flow) {
     flow.bindCtl(mkNavigation);
     let main = flow.child("div", { id: "main" });
+    main.addEventListener("focusin", () => {
+        Flow.BroadcastTelegram("collapse-sidebar");
+    });
 
     let outer = flow.elem(main, "div", { id: "mainOuter" });
     let bind = flow.bindObject(() => View.CurrView(), mkMain, outer);
@@ -26,6 +29,9 @@ function mkRoot(flow: Flow) {
 
     let actionCenter = flow.child("div", { className: "actionPanel" });
     flow.conditionalStyle(actionCenter, "noDisp", () => !View.CurrView().canAddNotes);
+    actionCenter.addEventListener("focusin", () => {
+        Flow.BroadcastTelegram("collapse-sidebar");
+    });
 
     let btAddNote = flow.elem<HTMLButtonElement>(actionCenter, "button", {
         type: "button",
