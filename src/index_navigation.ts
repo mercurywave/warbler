@@ -17,9 +17,13 @@ export function mkNavigation(flow: Flow) {
     btCollapse.addEventListener("click", () => {
         root.classList.toggle("collapsed");
     });
-    
+
+    root.addEventListener("focusout", (e) => {
+        root.classList.add("collapsed");
+    });
+
     let container = flow.child("div", { id: "nav-main" });
-    
+
     let search = flow.elem(container, "div");
     flow.bindCtl(mkSearch, search);
     let btAll = flow.elem<HTMLButtonElement>(container, "button", {
@@ -84,7 +88,7 @@ function mkSearch(flow: Flow) {
     });
     let pullSearch = () => {
         let view = View.CurrView();
-        if(view.searchTerm !== '')
+        if (view.searchTerm !== '')
             txtField.value = view.searchTerm;
     };
     flow.bindMail('Route.Init', null, pullSearch);
