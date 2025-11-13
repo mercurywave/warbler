@@ -60,6 +60,13 @@ body {
         position: absolute;
         z-index: 999;
         background-color: #14202B;
+        margin-left: -8px;
+        margin-top: -8px;
+        padding-left: 8px;
+        padding-top: 8px;
+    }
+    #btSettings {
+        margin-bottom: 16px;
     }
 
     #navigation.collapsed {
@@ -68,7 +75,7 @@ body {
 
     #navigation:not(.collapsed) {
         border-right: 1px solid #202A33;
-        box-shadow: 2px 0px 5px 6px rgba(0, 0, 0, 0.5);
+        box-shadow: 2px 0px 6px 6px rgba(0, 0, 0, 0.5);
     }
 }
 
