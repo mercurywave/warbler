@@ -4,6 +4,8 @@ const SCRIPTS_TO_CACHE = [
     './index.html',
     './styles.css',
     './app.bundle.js',
+    './favicon.ico',
+    './site.webmanifest',
 ];
 
 self.addEventListener('install', (event) => {
