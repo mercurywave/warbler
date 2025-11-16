@@ -7,7 +7,7 @@ import { View } from "./view";
 
 
 export function mkNavigation(flow: Flow) {
-    let root = flow.root("div", { id: "navigation" });
+    let root = flow.root("div", { id: "navigation", className: "collapsed" });
 
     let btCollapse = flow.elem<HTMLButtonElement>(root, "button", {
         type: "button",
