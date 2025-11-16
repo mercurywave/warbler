@@ -22,6 +22,7 @@ self.addEventListener('fetch', (event) => {
                 if (response) {
                     return response;
                 }
+                console.log("No response:", event.request);
                 return fetch(event.request);
             })
     );
