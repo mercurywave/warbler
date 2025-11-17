@@ -64,12 +64,12 @@ function spawnNote(startRecording?: boolean) {
 }
 
 async function setup(): Promise<void> {
-    setupServiceWorker();
     await Config.LoadSettings();
+    setupServiceWorker();
     await DB.Init();
     await Route.Init();
 }
-function setupServiceWorker(){
+function setupServiceWorker() {
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')
@@ -80,6 +80,13 @@ function setupServiceWorker(){
                     console.log('SW registration failed: ', error);
                 });
         });
+        if (Config.getDevMode()) {
+            // the service worker agressively caches everything, which is annoying for dev
+            // regularly clearing it is a fairly simple solution
+            navigator.serviceWorker.ready.then((registration) => {
+                registration!.active!.postMessage({ action: 'clearCache' });
+            });
+        }
     }
 }
 window.addEventListener('popstate', () => Route.OnNavigate());

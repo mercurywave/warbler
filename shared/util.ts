@@ -1,3 +1,4 @@
+import { Config } from "../src/settings";
 
 export type Nil = null | undefined;
 
@@ -104,7 +105,7 @@ export namespace Rest {
         try {
             const response = await fetch(url, {
                 method: 'GET',
-                signal: AbortSignal.timeout(3000),
+                signal: AbortSignal.timeout(Config.getDevMode() ? 500 : 3000),
             });
 
             if (response.ok) {

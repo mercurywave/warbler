@@ -6,6 +6,8 @@ const SCRIPTS_TO_CACHE = [
     './app.bundle.js',
     './favicon.ico',
     './site.webmanifest',
+];
+const IMAGES_TO_CACHE = [
     "./windows11/SmallTile.scale-100.png",
     "./windows11/SmallTile.scale-125.png",
     "./windows11/SmallTile.scale-150.png",
@@ -124,7 +126,7 @@ self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                return cache.addAll(SCRIPTS_TO_CACHE);
+                return cache.addAll(SCRIPTS_TO_CACHE.concat(IMAGES_TO_CACHE));
             })
     );
 });
@@ -136,8 +138,21 @@ self.addEventListener('fetch', (event) => {
                 if (response) {
                     return response;
                 }
-                console.log("No response:", event.request);
+                // If no response is found, fetch the resource from the network and add it to the cache
                 return fetch(event.request);
             })
     );
+});
+
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.action === 'clearCache') {
+        console.log("clearing sw cache");
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    return caches.delete(cacheName);
+                })
+            );
+        });
+    }
 });

@@ -12,6 +12,7 @@ interface ISettings {
 
     backendOverride?: string | Nil;
     primeServerId?: string | Nil;
+    devMode?: boolean | Nil;
 }
 
 export interface ILlmServer {
@@ -70,6 +71,12 @@ export namespace Config {
     export function getBackendOverride(): string | Nil { return _config.backendOverride; }
     export function setBackendOverride(url: string | Nil) { _config.backendOverride = url; }
 
+    export function getDevMode(): boolean { return !!_config.devMode;}
+    export function setDevMode(value:boolean) {
+        if(value) _config.devMode = true;
+        else delete _config.devMode;
+        Save();
+    }
 
     export function isOnline(): boolean { 
         return !!_backendFuncs && _backendFuncs?.uniqueId == _config?.primeServerId; 

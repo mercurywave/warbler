@@ -53,6 +53,7 @@ function mkMain(flow: Flow) {
     let doShowAi = () => Config.getllmServers().length < 1;
     addSection(flow, "AI Summary", f => mkAiConfig(f, Config.getSummaryAi()), doShowAi);
     addSection(flow, "AI Transcribe Filter", f => mkAiConfig(f, Config.getCleanAudioAi()), doShowAi);
+    addSection(flow, "Developer Options", mkDevSettings);
 }
 
 function mkSyncServer(flow: Flow) {
@@ -258,6 +259,14 @@ function mkAiConfig(flow: Flow, aiFunction: IAIFunction) {
     flow.conditionalStyle(container, "noDisp", () => server.value === "");
 }
 
+function mkDevSettings(flow: Flow) {
+    flow.elem(flow._root, "span", {
+        className: "edSetCheck",
+        innerText: "Developer Mode: ",
+    });
+    boundCheckbox(flow, () => Config.getDevMode(), v => Config.setDevMode(v));
+}
+
 function lbl(flow: Flow, str: string, parent?: HTMLElement) {
     const props = { className: "lblSet", innerText: str };
     if (parent)
@@ -291,6 +300,21 @@ function boundTextArea(flow: Flow, getter: () => string, setter: (val: string) =
     });
     input.addEventListener("change", () => {
         setter(input.value);
+        Config.Save();
+    });
+    return input;
+}
+
+function boundCheckbox(flow: Flow, getter: () => boolean, setter: (val: boolean) => void, parent?: HTMLElement): HTMLInputElement {
+    let input = flow.elem<HTMLInputElement>(parent, "input", {
+        className: "edSetCheck",
+        type: "checkbox",
+    });
+    flow.bind(() => {
+        input.checked = getter();
+    });
+    input.addEventListener("change", () => {
+        setter(input.checked);
         Config.Save();
     });
     return input;
