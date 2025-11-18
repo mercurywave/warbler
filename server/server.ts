@@ -39,6 +39,7 @@ app.get('/v1/recentNoteEdits', NoteApis.getRecentNoteEdits);
 app.post('/v1/loadNotes', NoteApis.postLoadNotes);
 app.post('/v1/updateNotes', NoteApis.postUpdateNotes);
 app.post('/v1/notesSearch', NoteApis.postSearch);
+app.post('/v1/loadNoteHistory', NoteApis.postLoadEdits);
 
 
 app.get('/v1/getFolders', FolderApis.getFolders);

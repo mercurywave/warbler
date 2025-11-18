@@ -4,6 +4,7 @@ import { DocStore } from "./docstore";
 import { util } from "@shared/util";
 import { autoThreeWayTextMerge } from '../shared/diff';
 import { VectorIndex } from './vector';
+import { AuditStore } from './auditstore';
 
 const VNoteData = z.object({
     v: z.number(),
@@ -17,8 +18,15 @@ const VNoteData = z.object({
 });
 export type NoteData = z.infer<typeof VNoteData>;
 
+export interface EditData {
+    id: string;
+    text: string;
+    editUtc: string;
+}
+
 let _db: DocStore<NoteData> = new DocStore("./data", "notes");
 let _vectorIndex = new VectorIndex<NoteData>(_db, "notes", 1, o => o.text);
+let _audit: AuditStore<EditData> = new AuditStore<EditData>("notes_audit");
 
 export namespace NoteApis {
 
@@ -74,6 +82,21 @@ export namespace NoteApis {
             res.status(400).json({ error: parse.error });
         }
     }
+
+    export async function postLoadEdits(req: Request, res: Response): Promise<void> {
+        const VReq = z.object({
+            id: z.string().optional(),
+        });
+        let parse = VReq.safeParse(req.body);
+        if (parse.success) {
+            let id = parse.data.id;
+            let search = await _audit.searchForHistory(id ?? '');
+            res.json(search);
+        } else {
+            console.error(z.treeifyError(parse.error));
+            res.status(400).json({ error: parse.error });
+        }
+    }
 }
 
 export namespace Notes {
@@ -90,9 +113,19 @@ export namespace Notes {
 }
 
 function updateNote(note: NoteData, anscestor: string): [NoteData, string[]] {
-    return _db.saveMerge(note.id, (curr) => {
+    let result = _db.saveMerge(note.id, (curr) => {
         let [text, conflicts] = autoThreeWayTextMerge(anscestor, curr?.text ?? '', note.text);
         note.text = text;
         return [note, conflicts];
+    });
+    logChange(note);
+    return result;
+}
+
+function logChange(note: NoteData) {
+    _audit.log(note.id, {
+        id: note.id,
+        text: note.text,
+        editUtc: new Date().toJSON(),
     });
 }
