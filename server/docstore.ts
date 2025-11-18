@@ -81,7 +81,7 @@ export class DocStore<T> {
         return files.map(file => {
             let ext = path.extname(file);
             let id = path.basename(file, ext);
-            if (ext === '.json' && util.isGUID(id))
+            if (ext === '.json')
                 return file;
             return null;
         }).filter(s => s != null);

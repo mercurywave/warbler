@@ -82,6 +82,21 @@ export namespace NoteApis {
             res.status(400).json({ error: parse.error });
         }
     }
+
+    export async function postLoadEdits(req: Request, res: Response): Promise<void> {
+        const VReq = z.object({
+            id: z.string().optional(),
+        });
+        let parse = VReq.safeParse(req.body);
+        if (parse.success) {
+            let id = parse.data.id;
+            let search = await _audit.searchForHistory(id ?? '');
+            res.json(search);
+        } else {
+            console.error(z.treeifyError(parse.error));
+            res.status(400).json({ error: parse.error });
+        }
+    }
 }
 
 export namespace Notes {
