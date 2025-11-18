@@ -6,6 +6,7 @@ import { scalableTextarea, simpleCollapsableSection } from "./common";
 import { Config } from "./settings";
 import { Search } from "./search";
 import { mkNoteWrapper } from "./index_note";
+import { mkNoteHistory } from "./index_history";
 
 
 export function mkMain(flow: Flow, view: ViewData) {
@@ -138,3 +139,7 @@ Route.Register("note", (flow, pars) => {
 Route.Register("search", (flow, pars) => {
     rendNotesList(flow);
 }, pars => { }, preLoadSearch)
+
+Route.Register("note-history", (flow, pars) => {
+    mkNoteHistory(flow, pars["id"]);
+}, pars => View.History(pars["id"]));

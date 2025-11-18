@@ -651,6 +651,11 @@ body {
     padding: 0 10px;
 }
 
+.edit-time {
+    font-style: italic;
+    font-size: smaller;
+}
+
 
 .btNavigate {
     padding: 5px 5px;

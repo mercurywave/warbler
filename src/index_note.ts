@@ -265,6 +265,9 @@ function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
     });
 
     let mnuNote = mkMoreMenu(flow, span);
+    let mHistory = mkMoreMenuOpt(flow, mnuNote, "Edit History", () => {
+        Route.Launch("note-history", { id: note.id });
+    });
     let mCleanupAudio = mkMoreMenuOpt(flow, mnuNote, "Clean Transcript", async () => {
         let folder = note.folder;
         let response = await Rest.postLong(Config.getBackendUrl()!, "v1/cleanupTranscript", {
@@ -292,6 +295,7 @@ function mkNoteFooter(flow: Flow, span: HTMLElement, note: Note) {
         note.isDeleted = true;
     });
     flow.bind(() => {
+        mHistory.hidden = !Config.getBackendUrl();
         mUndelete.hidden = !note.isDeleted;
         mHardDelete.hidden = !note.isDeleted;
         mDelete.hidden = note.isDeleted;

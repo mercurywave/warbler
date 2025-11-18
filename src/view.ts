@@ -1,6 +1,7 @@
 import { DB } from "./DB";
 import { Flow } from "./flow";
 import { Folder } from "./folder";
+import { loadNoteHistory, NoteEditData } from "./index_history";
 import { Note } from "./note";
 import { Nil } from "@shared/util";
 
@@ -8,6 +9,7 @@ export class ViewData {
     public type: eView;
     public settings: eSettingsPage = eSettingsPage.None;
     public _notes: Note[] = [];
+    public _audits: NoteEditData[] = [];
     private _fullResults: Note[] = [];
     public folder: Folder | Nil = null;
     public tag: string | Nil = null;
@@ -82,10 +84,16 @@ export class ViewData {
         this.populator();
         Flow.Dirty();
     }
+
+    public async asyncHistoryLoad(id: string){
+        let edits = await loadNoteHistory(id);
+        this._audits = edits;
+        Flow.Dirty();
+    }
 }
 
 export enum eView {
-    None, All, Unsorted, Folder, Tag, Settings, Deleted, SingleNote, Conflicted, Search
+    None, All, Unsorted, Folder, Tag, Settings, Deleted, SingleNote, Conflicted, Search, NoteHistory
 };
 
 export enum eSettingsPage {
@@ -169,6 +177,13 @@ export namespace View {
         reset(eView.Settings);
         _data.settings = page;
         _data.title = "Settings";
+        finalize();
+    }
+
+    export function History(noteId: string){
+        reset(eView.NoteHistory);
+        _data.title = "Note History";
+        _data.asyncHistoryLoad(noteId);
         finalize();
     }
 }
